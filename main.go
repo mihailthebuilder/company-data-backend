@@ -7,6 +7,12 @@ import (
 	"regexp"
 )
 
+type Company struct {
+	Name   string
+	Number string
+	Url    string
+}
+
 func main() {
 	http.HandleFunc("/companies/sic_code/", handler)
 	log.Println("Starting server on localhost:8080")
@@ -16,6 +22,7 @@ func main() {
 func handler(w http.ResponseWriter, r *http.Request) {
 	sic := r.URL.Path[len("/companies/sic_code/"):]
 
+	log.Fatal("Test")
 	log.Printf("%s %s", r.Method, "/companies/sic_code/")
 
 	valid, err := isValidSicFormat(sic)

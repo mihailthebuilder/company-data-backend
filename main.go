@@ -14,7 +14,10 @@ import (
 var dbConn *sql.DB
 
 func main() {
-	connectToDatabase(dbConn)
+	err := connectToDatabase()
+	if err != nil {
+		log.Panicf("Couldn't connect to database: %s", err)
+	}
 
 	r := gin.Default()
 
@@ -47,7 +50,7 @@ func isValidSicFormat(sic string) (bool, error) {
 	return match, err
 }
 
-func connectToDatabase(dbConn *sql.DB) error {
+func connectToDatabase() error {
 	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s", GetEnv("DB_HOST"), GetEnv("DB_PORT"), GetEnv("DB_USER"), GetEnv("DB_PASSWORD"), GetEnv("DB_NAME"))
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {

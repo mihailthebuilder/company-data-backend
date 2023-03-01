@@ -62,7 +62,7 @@ func isValidSicFormat(sic string) bool {
 }
 
 func connectToDatabase() {
-	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s", GetEnv("DB_HOST"), GetEnv("DB_PORT"), GetEnv("DB_USER"), GetEnv("DB_PASSWORD"), GetEnv("DB_NAME"))
+	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s", getEnv("DB_HOST"), getEnv("DB_PORT"), getEnv("DB_USER"), getEnv("DB_PASSWORD"), getEnv("DB_NAME"))
 
 	db, err := gorm.Open(postgres.Open(connStr), &gorm.Config{
 		NamingStrategy: schema.NamingStrategy{
@@ -76,7 +76,7 @@ func connectToDatabase() {
 	dbConn = db
 }
 
-func GetEnv(env string) string {
+func getEnv(env string) string {
 	val := os.Getenv(env)
 	if val == "" {
 		log.Fatal("Environment variable not set:", env)

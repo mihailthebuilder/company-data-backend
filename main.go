@@ -12,16 +12,19 @@ import (
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"gorm.io/gorm/schema"
 )
 
 var dbConn *gorm.DB
 
 type SicCompany struct {
-	Index          string `gorm:"index"`
-	CompanyNumber  string `gorm:"CompanyNumber"`
-	SicCode        string `gorm:"SicCode"`
-	SicDescription string `gorm:"SicDescription"`
+	Index          string `gorm:"column:index"`
+	CompanyNumber  string `gorm:"column:CompanyNumber"`
+	SicCode        string `gorm:"column:SicCode"`
+	SicDescription string `gorm:"column:SicDescription"`
+}
+
+func (SicCompany) TableName() string {
+	return "sic_company"
 }
 
 func main() {
@@ -64,11 +67,7 @@ func isValidSicFormat(sic string) bool {
 func connectToDatabase() {
 	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s", getEnv("DB_HOST"), getEnv("DB_PORT"), getEnv("DB_USER"), getEnv("DB_PASSWORD"), getEnv("DB_NAME"))
 
-	db, err := gorm.Open(postgres.Open(connStr), &gorm.Config{
-		NamingStrategy: schema.NamingStrategy{
-			SingularTable: true,
-		},
-	})
+	db, err := gorm.Open(postgres.Open(connStr))
 	if err != nil {
 		log.Panic("Couldn't connect to database:", err)
 	}
@@ -85,11 +84,11 @@ func getEnv(env string) string {
 }
 
 func processCompaniesBySicCodeRequest(sic string, c *gin.Context) {
-	var sicCompany SicCompany
+	var sicCompanies []SicCompany
 
-	dbConn.First(&sicCompany, 1)
+	dbConn.Model(&SicCompany{}).Where(&SicCompany{SicCode: sic}).Order("RANDOM()").Limit(10).Find(&sicCompanies)
 
 	c.JSON(200, gin.H{
-		"message": sicCompany,
+		"message": sicCompanies,
 	})
 }

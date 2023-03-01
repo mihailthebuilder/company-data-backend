@@ -42,12 +42,7 @@ func main() {
 func handleCompaniesBySicCodeRequest(c *gin.Context) {
 	sic := c.Param("sic_code")
 
-	valid, err := isValidSicFormat(sic)
-	if err != nil {
-		log.Println("Valid SIC format check failed:", err)
-		c.JSON(http.StatusInternalServerError, "Internal server error")
-	}
-
+	valid := isValidSicFormat(sic)
 	if !valid {
 		c.JSON(http.StatusBadRequest, fmt.Sprintf("Invalid SIC code: %s", sic))
 	}
@@ -55,10 +50,15 @@ func handleCompaniesBySicCodeRequest(c *gin.Context) {
 	processCompaniesBySicCodeRequest(sic, c)
 }
 
-func isValidSicFormat(sic string) (bool, error) {
+func isValidSicFormat(sic string) bool {
 	pattern := "^[0-9]+$"
 	match, err := regexp.MatchString(pattern, sic)
-	return match, err
+
+	if err != nil {
+		log.Panic("Error validating SIC code:", err)
+	}
+
+	return match
 }
 
 func connectToDatabase() {
@@ -70,7 +70,7 @@ func connectToDatabase() {
 		},
 	})
 	if err != nil {
-		log.Panicf("Couldn't connect to database: %s", err)
+		log.Panic("Couldn't connect to database:", err)
 	}
 
 	dbConn = db
@@ -79,7 +79,7 @@ func connectToDatabase() {
 func GetEnv(env string) string {
 	val := os.Getenv(env)
 	if val == "" {
-		log.Fatalf("Environment variable not set: %s", env)
+		log.Fatal("Environment variable not set:", env)
 	}
 	return val
 }

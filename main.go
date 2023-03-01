@@ -86,7 +86,10 @@ func getEnv(env string) string {
 func processCompaniesBySicCodeRequest(sic string, c *gin.Context) {
 	var sicCompanies []SicCompany
 
-	dbConn.Model(&SicCompany{}).Where(&SicCompany{SicCode: sic}).Order("RANDOM()").Limit(10).Find(&sicCompanies)
+	result := dbConn.Model(&SicCompany{}).Where(&SicCompany{SicCode: sic}).Order("RANDOM()").Limit(10).Find(&sicCompanies)
+	if result.Error != nil {
+		log.Panic("Query failure", result.Error)
+	}
 
 	c.JSON(200, gin.H{
 		"message": sicCompanies,

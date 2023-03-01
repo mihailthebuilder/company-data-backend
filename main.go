@@ -65,7 +65,7 @@ func connectToDatabase() error {
 		return err
 	}
 
-	*dbConn = *db
+	dbConn = db
 	return nil
 }
 

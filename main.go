@@ -9,12 +9,20 @@ import (
 	"regexp"
 
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
+
+	_ "github.com/lib/pq"
 )
 
 var dbConn *sql.DB
 
 func main() {
-	err := connectToDatabase()
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
+	err = connectToDatabase()
 	if err != nil {
 		log.Panicf("Couldn't connect to database: %s", err)
 	}

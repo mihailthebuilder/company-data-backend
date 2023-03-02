@@ -14,7 +14,49 @@ import (
 	"gorm.io/gorm"
 )
 
+func main() {
+	loadEnvironmentVariables()
+
+	connectToDatabase()
+
+	runApplication()
+}
+
+func loadEnvironmentVariables() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+}
+
 var dbConn *gorm.DB
+
+func connectToDatabase() {
+	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s", getEnv("DB_HOST"), getEnv("DB_PORT"), getEnv("DB_USER"), getEnv("DB_PASSWORD"), getEnv("DB_NAME"))
+
+	db, err := gorm.Open(postgres.Open(connStr))
+	if err != nil {
+		log.Panic("Couldn't connect to database:", err)
+	}
+
+	dbConn = db
+}
+
+func getEnv(env string) string {
+	val := os.Getenv(env)
+	if val == "" {
+		log.Fatal("Environment variable not set:", env)
+	}
+	return val
+}
+
+func runApplication() {
+	r := gin.Default()
+
+	r.GET("/companies/sic_code/:sic_code", handleCompaniesBySicCodeRequest)
+
+	r.Run()
+}
 
 type SicCompany struct {
 	Index          string `gorm:"column:index"`
@@ -25,21 +67,6 @@ type SicCompany struct {
 
 func (SicCompany) TableName() string {
 	return "sic_company"
-}
-
-func main() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
-
-	connectToDatabase()
-
-	r := gin.Default()
-
-	r.GET("/companies/sic_code/:sic_code", handleCompaniesBySicCodeRequest)
-
-	r.Run()
 }
 
 func handleCompaniesBySicCodeRequest(c *gin.Context) {
@@ -62,25 +89,6 @@ func isValidSicFormat(sic string) bool {
 	}
 
 	return match
-}
-
-func connectToDatabase() {
-	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s", getEnv("DB_HOST"), getEnv("DB_PORT"), getEnv("DB_USER"), getEnv("DB_PASSWORD"), getEnv("DB_NAME"))
-
-	db, err := gorm.Open(postgres.Open(connStr))
-	if err != nil {
-		log.Panic("Couldn't connect to database:", err)
-	}
-
-	dbConn = db
-}
-
-func getEnv(env string) string {
-	val := os.Getenv(env)
-	if val == "" {
-		log.Fatal("Environment variable not set:", env)
-	}
-	return val
 }
 
 func processCompaniesBySicCodeRequest(sic string, c *gin.Context) {

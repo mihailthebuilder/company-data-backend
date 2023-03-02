@@ -91,7 +91,5 @@ func processCompaniesBySicCodeRequest(sic string, c *gin.Context) {
 		log.Panic("Query failure", result.Error)
 	}
 
-	c.JSON(200, gin.H{
-		"message": sicCompanies,
-	})
+	c.JSON(200, sicCompanies)
 }

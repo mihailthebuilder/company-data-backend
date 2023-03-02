@@ -58,17 +58,6 @@ func runApplication() {
 	r.Run()
 }
 
-type SicCompany struct {
-	Index          string `gorm:"column:index"`
-	CompanyNumber  string `gorm:"column:CompanyNumber"`
-	SicCode        string `gorm:"column:SicCode"`
-	SicDescription string `gorm:"column:SicDescription"`
-}
-
-func (SicCompany) TableName() string {
-	return "sic_company"
-}
-
 func handleCompaniesBySicCodeRequest(c *gin.Context) {
 	sic := c.Param("sic_code")
 
@@ -90,6 +79,17 @@ func isValidSicFormat(sic *string) bool {
 	}
 
 	return match
+}
+
+type SicCompany struct {
+	Index          string `gorm:"column:index"`
+	CompanyNumber  string `gorm:"column:CompanyNumber"`
+	SicCode        string `gorm:"column:SicCode"`
+	SicDescription string `gorm:"column:SicDescription"`
+}
+
+func (SicCompany) TableName() string {
+	return "sic_company"
 }
 
 func processCompaniesBySicCodeRequest(sic *string, c *gin.Context) {

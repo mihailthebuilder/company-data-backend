@@ -75,6 +75,7 @@ func handleCompaniesBySicCodeRequest(c *gin.Context) {
 	valid := isValidSicFormat(&sic)
 	if !valid {
 		c.JSON(http.StatusBadRequest, fmt.Sprintf("Invalid SIC code: %s", sic))
+		return
 	}
 
 	processCompaniesBySicCodeRequest(&sic, c)

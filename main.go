@@ -72,17 +72,17 @@ func (SicCompany) TableName() string {
 func handleCompaniesBySicCodeRequest(c *gin.Context) {
 	sic := c.Param("sic_code")
 
-	valid := isValidSicFormat(sic)
+	valid := isValidSicFormat(&sic)
 	if !valid {
 		c.JSON(http.StatusBadRequest, fmt.Sprintf("Invalid SIC code: %s", sic))
 	}
 
-	processCompaniesBySicCodeRequest(sic, c)
+	processCompaniesBySicCodeRequest(&sic, c)
 }
 
-func isValidSicFormat(sic string) bool {
+func isValidSicFormat(sic *string) bool {
 	pattern := "^[0-9]+$"
-	match, err := regexp.MatchString(pattern, sic)
+	match, err := regexp.MatchString(pattern, *sic)
 
 	if err != nil {
 		log.Panic("Error validating SIC code:", err)
@@ -91,10 +91,10 @@ func isValidSicFormat(sic string) bool {
 	return match
 }
 
-func processCompaniesBySicCodeRequest(sic string, c *gin.Context) {
+func processCompaniesBySicCodeRequest(sic *string, c *gin.Context) {
 	var sicCompanies []SicCompany
 
-	result := dbConn.Model(&SicCompany{}).Where(&SicCompany{SicCode: sic}).Order("RANDOM()").Limit(10).Find(&sicCompanies)
+	result := dbConn.Model(&SicCompany{}).Where(&SicCompany{SicCode: *sic}).Order("RANDOM()").Limit(10).Find(&sicCompanies)
 	if result.Error != nil {
 		log.Panic("Query failure", result.Error)
 	}

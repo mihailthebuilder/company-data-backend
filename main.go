@@ -9,7 +9,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
-
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -18,8 +17,6 @@ func main() {
 	if isRunningLocally() {
 		loadEnvironmentVariablesFromDotEnvFile()
 	}
-
-	connectToDatabase()
 
 	runApplication()
 }
@@ -35,19 +32,6 @@ func loadEnvironmentVariablesFromDotEnvFile() {
 	}
 }
 
-var dbConn *gorm.DB
-
-func connectToDatabase() {
-	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s", getEnv("DB_HOST"), getEnv("DB_PORT"), getEnv("DB_USER"), getEnv("DB_PASSWORD"), getEnv("DB_NAME"))
-
-	db, err := gorm.Open(postgres.Open(connStr))
-	if err != nil {
-		log.Fatal("Couldn't connect to database:", err)
-	}
-
-	dbConn = db
-}
-
 func getEnv(env string) string {
 	val := os.Getenv(env)
 	if val == "" {
@@ -59,12 +43,20 @@ func getEnv(env string) string {
 func runApplication() {
 	r := gin.Default()
 
+	serverRecoversFromAnyPanicAndWrites500(r)
+
 	r.GET("/companies/sic_code/:sic_code", handleCompaniesBySicCodeRequest)
 
 	r.Run()
 }
 
+func serverRecoversFromAnyPanicAndWrites500(engine *gin.Engine) {
+	engine.Use(gin.Recovery())
+}
+
 func handleCompaniesBySicCodeRequest(c *gin.Context) {
+	connectToDatabase()
+
 	sic := c.Param("sic_code")
 
 	valid := isValidSicFormat(&sic)
@@ -74,6 +66,19 @@ func handleCompaniesBySicCodeRequest(c *gin.Context) {
 	}
 
 	processCompaniesBySicCodeRequest(&sic, c)
+}
+
+var dbConn *gorm.DB
+
+func connectToDatabase() {
+	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s", getEnv("DB_HOST"), getEnv("DB_PORT"), getEnv("DB_USER"), getEnv("DB_PASSWORD"), getEnv("DB_NAME"))
+
+	db, err := gorm.Open(postgres.Open(connStr))
+	if err != nil {
+		log.Fatal("Couldn't connect to database:", err)
+	}
+
+	dbConn = db
 }
 
 func isValidSicFormat(sic *string) bool {

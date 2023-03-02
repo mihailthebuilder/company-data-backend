@@ -15,14 +15,20 @@ import (
 )
 
 func main() {
-	loadEnvironmentVariables()
+	if isRunningLocally() {
+		loadEnvironmentVariablesFromDotEnvFile()
+	}
 
 	connectToDatabase()
 
 	runApplication()
 }
 
-func loadEnvironmentVariables() {
+func isRunningLocally() bool {
+	return os.Getenv("GIN_MODE") == ""
+}
+
+func loadEnvironmentVariablesFromDotEnvFile() {
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Error loading .env file")

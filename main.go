@@ -133,7 +133,20 @@ func processCompaniesBySicCodeRequest(sic *string, c *gin.Context) {
 	}
 
 	for rows.Next() {
-		rows.Scan(&company)
+		err = rows.Scan(
+			&company.CompanyName,
+			&company.CompanyNumber,
+			&company.AddressLine1,
+			&company.AddressLine2,
+			&company.PostTown,
+			&company.PostCode,
+			&company.CompanyStatus,
+			&company.IncorporationDate,
+		)
+		if err != nil {
+			log.Panic("Error scanning db row: ", err)
+		}
+
 		companies = append(companies, company)
 	}
 

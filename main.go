@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
@@ -9,8 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
+	_ "github.com/lib/pq"
 )
 
 func main() {
@@ -56,6 +56,7 @@ func serverRecoversFromAnyPanicAndWrites500(engine *gin.Engine) {
 
 func handleCompaniesBySicCodeRequest(c *gin.Context) {
 	connectToDatabase()
+	defer dbConn.Close()
 
 	sic := c.Param("sic_code")
 
@@ -68,14 +69,14 @@ func handleCompaniesBySicCodeRequest(c *gin.Context) {
 	processCompaniesBySicCodeRequest(&sic, c)
 }
 
-var dbConn *gorm.DB
+var dbConn *sql.DB
 
 func connectToDatabase() {
-	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s", getEnv("DB_HOST"), getEnv("DB_PORT"), getEnv("DB_USER"), getEnv("DB_PASSWORD"), getEnv("DB_NAME"))
+	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", getEnv("DB_HOST"), getEnv("DB_PORT"), getEnv("DB_USER"), getEnv("DB_PASSWORD"), getEnv("DB_NAME"))
 
-	db, err := gorm.Open(postgres.Open(connStr))
+	db, err := sql.Open("postgres", connStr)
 	if err != nil {
-		log.Panic("Couldn't connect to database:", err)
+		log.Panic("Error opening database connection: ", err)
 	}
 
 	dbConn = db
@@ -92,24 +93,49 @@ func isValidSicFormat(sic *string) bool {
 	return match
 }
 
-type SicCompany struct {
-	Index          string `gorm:"column:index"`
-	CompanyNumber  string `gorm:"column:CompanyNumber"`
-	SicCode        string `gorm:"column:SicCode"`
-	SicDescription string `gorm:"column:SicDescription"`
-}
-
-func (SicCompany) TableName() string {
-	return "sic_company"
+type Company struct {
+	CompanyName       string
+	CompanyNumber     string
+	AddressLine1      string
+	AddressLine2      string
+	PostTown          string
+	PostCode          string
+	CompanyStatus     string
+	IncorporationDate string
 }
 
 func processCompaniesBySicCodeRequest(sic *string, c *gin.Context) {
-	var sicCompanies []SicCompany
+	var company Company
+	var companies []Company
 
-	result := dbConn.Model(&SicCompany{}).Where(&SicCompany{SicCode: *sic}).Order("RANDOM()").Limit(10).Find(&sicCompanies)
-	if result.Error != nil {
-		log.Panic("Query failure", result.Error)
+	template := `
+	SELECT cb."CompanyName", 
+		sc."CompanyNumber",
+		cb."RegAddress.AddressLine1",
+		cb."RegAddress.AddressLine2",
+		cb."RegAddress.PostTown",
+		cb."RegAddress.PostCode",
+		cb."CompanyStatus",
+		cb."IncorporationDate"
+	FROM "sic_company" sc
+	TABLESAMPLE SYSTEM (0.5)
+	JOIN "company_base" cb
+		ON sc."SicCode" = $1
+		AND sc."Snapshot" = '2023-03-01'
+		AND cb."CompanyNumberSnapshot" = sc."CompanyNumberSnapshot"
+	ORDER BY RANDOM()
+	LIMIT 10
+	`
+
+	rows, err := dbConn.Query(template, *sic)
+	if err != nil {
+		log.Panic("Query failure", err)
 	}
 
-	c.JSON(http.StatusOK, sicCompanies)
+	for rows.Next() {
+		rows.Scan(&company)
+		companies = append(companies, company)
+	}
+
+	c.JSON(http.StatusOK, companies)
 }

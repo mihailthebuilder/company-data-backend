@@ -19,5 +19,5 @@ caprover deploy
 
 Send request:
 ```
-curl -d '{"SicDescription":"Test"}' http://localhost:8080/companies/sic_description
+http://localhost:8080/companies/sample?SicDescription=Cultural%20education
 ```

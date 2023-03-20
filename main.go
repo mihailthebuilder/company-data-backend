@@ -44,7 +44,7 @@ func runApplication() {
 
 	serverRecoversFromAnyPanicAndWrites500(r)
 
-	r.GET("/companies/sic_description/", handleRequestForCompaniesSample)
+	r.GET("/companies/sic_description", handleRequestForCompaniesSample)
 
 	r.Run()
 }

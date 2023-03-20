@@ -16,3 +16,8 @@ Deploy to Hetzner server with Caprover:
 ```
 caprover deploy
 ```
+
+Send request:
+```
+curl -d '{"SicDescription":"Test"}' http://localhost:8080/companies/sic_description
+```

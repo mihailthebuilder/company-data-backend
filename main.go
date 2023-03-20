@@ -44,7 +44,7 @@ func runApplication() {
 
 	serverRecoversFromAnyPanicAndWrites500(r)
 
-	r.GET("/companies/sic_description", handleRequestForCompaniesSample)
+	r.GET("/companies/sample", handleRequestForCompaniesSample)
 
 	r.Run()
 }
@@ -54,16 +54,15 @@ func serverRecoversFromAnyPanicAndWrites500(engine *gin.Engine) {
 }
 
 func handleRequestForCompaniesSample(c *gin.Context) {
-	var body RequestBody
 
-	err := c.BindJSON(&body)
-	if err != nil {
-		log.Println("Error unmarshalling request: ", err)
-		c.JSON(http.StatusBadRequest, "Invalid request body")
+	sicDescription := c.Query("SicDescription")
+	if len(sicDescription) == 0 || len(sicDescription) > 158 {
+		log.Println("Invalid industry request: ", sicDescription)
+		c.JSON(http.StatusBadRequest, fmt.Sprintf("Invalid industry: %s", sicDescription))
 		return
 	}
 
-	sample := getCompaniesSample(&body.SicDescription)
+	sample := getCompaniesSample(&sicDescription)
 
 	c.JSON(http.StatusOK, sample)
 }

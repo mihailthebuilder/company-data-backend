@@ -44,7 +44,7 @@ func runApplication() {
 
 	serverRecoversFromAnyPanicAndWrites500(r)
 
-	r.GET("/companies/sic_code/:sic_code", handleRequestForCompaniesSample)
+	r.GET("/companies/sic_description/", handleRequestForCompaniesSample)
 
 	r.Run()
 }
@@ -69,7 +69,7 @@ func handleRequestForCompaniesSample(c *gin.Context) {
 }
 
 type RequestBody struct {
-	SicDescription string `json:"sic"`
+	SicDescription string `json:"sicDescription"`
 }
 
 type CompanyRow struct {

@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"regexp"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -45,7 +44,7 @@ func runApplication() {
 
 	serverRecoversFromAnyPanicAndWrites500(r)
 
-	r.GET("/companies/sic_code/:sic_code", handleCompaniesBySicCodeRequest)
+	r.GET("/companies/sic_code/:sic_code", handleRequestForCompaniesSample)
 
 	r.Run()
 }
@@ -54,43 +53,23 @@ func serverRecoversFromAnyPanicAndWrites500(engine *gin.Engine) {
 	engine.Use(gin.Recovery())
 }
 
-func handleCompaniesBySicCodeRequest(c *gin.Context) {
-	connectToDatabase()
-	defer dbConn.Close()
+func handleRequestForCompaniesSample(c *gin.Context) {
+	var body RequestBody
 
-	sic := c.Param("sic_code")
-
-	valid := isValidSicFormat(&sic)
-	if !valid {
-		c.JSON(http.StatusBadRequest, fmt.Sprintf("Invalid SIC code: %s", sic))
+	err := c.BindJSON(&body)
+	if err != nil {
+		log.Println("Error unmarshalling request: ", err)
+		c.JSON(http.StatusBadRequest, "Invalid request body")
 		return
 	}
 
-	processCompaniesBySicCodeRequest(&sic, c)
+	sample := getCompaniesSample(&body.SicDescription)
+
+	c.JSON(http.StatusOK, sample)
 }
 
-var dbConn *sql.DB
-
-func connectToDatabase() {
-	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", getEnv("DB_HOST"), getEnv("DB_PORT"), getEnv("DB_USER"), getEnv("DB_PASSWORD"), getEnv("DB_NAME"))
-
-	db, err := sql.Open("postgres", connStr)
-	if err != nil {
-		log.Panic("Error opening database connection: ", err)
-	}
-
-	dbConn = db
-}
-
-func isValidSicFormat(sic *string) bool {
-	pattern := "^[0-9]+$"
-	match, err := regexp.MatchString(pattern, *sic)
-
-	if err != nil {
-		log.Panic("Error validating SIC code:", err)
-	}
-
-	return match
+type RequestBody struct {
+	SicDescription string `json:"sic"`
 }
 
 type CompanyRow struct {
@@ -112,7 +91,10 @@ type ProcessedCompany struct {
 	IncorporationDate string `json:"incorporationDate"`
 }
 
-func processCompaniesBySicCodeRequest(sic *string, c *gin.Context) {
+func getCompaniesSample(sic *string) []ProcessedCompany {
+	connectToDatabase()
+	defer dbConn.Close()
+
 	var companies []ProcessedCompany
 
 	template := `
@@ -169,7 +151,20 @@ func processCompaniesBySicCodeRequest(sic *string, c *gin.Context) {
 		companies = append(companies, processedCompany)
 	}
 
-	c.JSON(http.StatusOK, companies)
+	return companies
+}
+
+var dbConn *sql.DB
+
+func connectToDatabase() {
+	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", getEnv("DB_HOST"), getEnv("DB_PORT"), getEnv("DB_USER"), getEnv("DB_PASSWORD"), getEnv("DB_NAME"))
+
+	db, err := sql.Open("postgres", connStr)
+	if err != nil {
+		log.Panic("Error opening database connection: ", err)
+	}
+
+	dbConn = db
 }
 
 func getCompanySize(accountCategory string) string {

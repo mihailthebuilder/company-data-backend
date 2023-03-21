@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -165,9 +166,9 @@ func getCompaniesSample(sic *string) []ProcessedCompany {
 		processedCompany := ProcessedCompany{
 			Name:              companyRow.CompanyName,
 			CompaniesHouseUrl: fmt.Sprintf("https://find-and-update.company-information.service.gov.uk/company/%s", companyRow.CompanyNumber),
-			Address:           fmt.Sprintf("%s,%s,%s,%s", companyRow.AddressLine1, companyRow.AddressLine2, companyRow.PostTown, companyRow.PostCode),
+			Address:           generateAddress(companyRow.AddressLine1, companyRow.AddressLine2, companyRow.PostTown, companyRow.PostCode),
 			IncorporationDate: companyRow.IncorporationDate,
-			Size:              getCompanySize(companyRow.AccountCategory),
+			Size:              calculateCompanySize(companyRow.AccountCategory),
 		}
 
 		companies = append(companies, processedCompany)
@@ -189,8 +190,22 @@ func connectToDatabase() {
 	dbConn = db
 }
 
-func getCompanySize(accountCategory string) string {
+func calculateCompanySize(accountCategory string) string {
 	return AccountRankingToSize[CompanyAccountRanking[accountCategory]]
+}
+
+func generateAddress(addressEntries ...string) string {
+	nonEmptyAddressEntries := []string{}
+
+	for _, entry := range addressEntries {
+		entryWithoutWhitespace := strings.TrimSpace(entry)
+
+		if len(entryWithoutWhitespace) > 0 {
+			nonEmptyAddressEntries = append(nonEmptyAddressEntries, entry)
+		}
+	}
+
+	return strings.Join(nonEmptyAddressEntries, ", ")
 }
 
 var AccountRankingToSize = map[int]string{

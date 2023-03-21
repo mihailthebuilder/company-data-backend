@@ -7,7 +7,9 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
@@ -43,6 +45,7 @@ func runApplication() {
 	r := gin.Default()
 
 	serverRecoversFromAnyPanicAndWrites500(r)
+	allowAllOriginsForCORS(r)
 
 	r.GET("/companies/sample", handleRequestForCompaniesSample)
 
@@ -51,6 +54,10 @@ func runApplication() {
 
 func serverRecoversFromAnyPanicAndWrites500(engine *gin.Engine) {
 	engine.Use(gin.Recovery())
+}
+
+func allowAllOriginsForCORS(engine *gin.Engine) {
+	engine.Use(cors.Default())
 }
 
 func handleRequestForCompaniesSample(c *gin.Context) {

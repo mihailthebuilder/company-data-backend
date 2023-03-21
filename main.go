@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 
 	"github.com/gin-contrib/cors"
@@ -62,14 +63,19 @@ func allowAllOriginsForCORS(engine *gin.Engine) {
 
 func handleRequestForCompaniesSample(c *gin.Context) {
 
-	sicDescription := c.Query("SicDescription")
-	if len(sicDescription) == 0 || len(sicDescription) > 158 {
-		log.Println("Invalid industry request: ", sicDescription)
-		c.JSON(http.StatusBadRequest, fmt.Sprintf("Invalid industry: %s", sicDescription))
+	encodedSicDescription := c.Query("SicDescription")
+	if len(encodedSicDescription) == 0 || len(encodedSicDescription) > 200 {
+		log.Println("Invalid industry request: ", encodedSicDescription)
+		c.JSON(http.StatusBadRequest, fmt.Sprintf("Invalid industry: %s", encodedSicDescription))
 		return
 	}
 
-	sample := getCompaniesSample(&sicDescription)
+	decodedSicDescription, err := url.QueryUnescape(encodedSicDescription)
+	if err != nil {
+		log.Panic("can't decode sicDescription ", decodedSicDescription, " error: ", err)
+	}
+
+	sample := getCompaniesSample(&decodedSicDescription)
 
 	c.JSON(http.StatusOK, sample)
 }

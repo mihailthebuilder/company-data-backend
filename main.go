@@ -2,10 +2,11 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
-	"net/url"
 	"os"
 
 	"github.com/gin-contrib/cors"
@@ -48,7 +49,7 @@ func runApplication() {
 	serverRecoversFromAnyPanicAndWrites500(r)
 	allowAllOriginsForCORS(r)
 
-	r.GET("/companies/sample", handleRequestForCompaniesSample)
+	r.POST("/companies/sample", handleRequestForCompaniesSample)
 
 	r.Run()
 }
@@ -61,21 +62,30 @@ func allowAllOriginsForCORS(engine *gin.Engine) {
 	engine.Use(cors.Default())
 }
 
+type SampleRequestBody struct {
+	SicDescription string
+}
+
 func handleRequestForCompaniesSample(c *gin.Context) {
 
-	encodedSicDescription := c.Query("SicDescription")
-	if len(encodedSicDescription) == 0 || len(encodedSicDescription) > 200 {
-		log.Println("Invalid industry request: ", encodedSicDescription)
-		c.JSON(http.StatusBadRequest, fmt.Sprintf("Invalid industry: %s", encodedSicDescription))
+	b, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		log.Panic("error reading request body:", err)
+	}
+
+	var body SampleRequestBody
+	err = json.Unmarshal(b, &body)
+	if err != nil {
+		log.Panic("error unmarshalling body:", err)
+	}
+
+	if len(body.SicDescription) == 0 || len(body.SicDescription) > 200 {
+		log.Println("Invalid industry request: ", body.SicDescription)
+		c.JSON(http.StatusBadRequest, fmt.Sprintf("Invalid industry: %s", body.SicDescription))
 		return
 	}
 
-	decodedSicDescription, err := url.QueryUnescape(encodedSicDescription)
-	if err != nil {
-		log.Panic("can't decode sicDescription ", decodedSicDescription, " error: ", err)
-	}
-
-	sample := getCompaniesSample(&decodedSicDescription)
+	sample := getCompaniesSample(&body.SicDescription)
 
 	c.JSON(http.StatusOK, sample)
 }

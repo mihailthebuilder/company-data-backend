@@ -26,11 +26,3 @@ func loadEnvironmentVariablesFromDotEnvFile() {
 		log.Fatal("Error loading .env file")
 	}
 }
-
-func getEnv(env string) string {
-	val := os.Getenv(env)
-	if val == "" {
-		log.Fatal("Environment variable not set:", env)
-	}
-	return val
-}

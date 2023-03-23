@@ -7,7 +7,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -138,14 +137,6 @@ func connectToDatabase() {
 	}
 
 	dbConn = db
-}
-
-func getEnv(env string) string {
-	val := os.Getenv(env)
-	if val == "" {
-		log.Fatal("Environment variable not set:", env)
-	}
-	return val
 }
 
 func calculateCompanySize(accountCategory string) string {

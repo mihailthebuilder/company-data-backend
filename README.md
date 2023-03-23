@@ -17,7 +17,12 @@ Deploy to Hetzner server with Caprover:
 caprover deploy
 ```
 
-Send request:
+Test email endpoint
 ```
-http://localhost:8080/companies/sample?SicDescription=Cultural%20education
+curl -X POST http://localhost:8080/email
+```
+
+Test sampler endpoint
+```
+curl -X POST http://localhost:8080/companies/sample -d '{"SicDescription":"Extraction of salt"}'
 ```

@@ -3,7 +3,7 @@
 Run the server locally:
 
 ```
-go run main.go
+go run .
 ```
 
 Run Dockerised application locally, in production mode:
@@ -19,8 +19,9 @@ caprover deploy
 
 Test email endpoint
 ```
-curl -X POST http://localhost:8080/email
+curl -X POST http://localhost:8080/email -d '{"EmailAddress":"hello@test.com", "Request":"hello world"}'
 ```
+
 
 Test sampler endpoint
 ```

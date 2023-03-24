@@ -2,9 +2,7 @@ package main
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"strings"
@@ -14,20 +12,15 @@ import (
 
 func handleRequestForCompaniesSample(c *gin.Context) {
 
-	b, err := io.ReadAll(c.Request.Body)
-	if err != nil {
-		log.Panic("error reading request body:", err)
-	}
-
 	var body SampleRequestBody
-	err = json.Unmarshal(b, &body)
-	if err != nil {
-		log.Panic("error unmarshalling body:", err)
+	if err := c.ShouldBindJSON(&body); err != nil {
+		log.Println("error parsing request body:", err)
+		c.String(http.StatusBadRequest, "error parsing request body")
 	}
 
 	if len(body.SicDescription) == 0 || len(body.SicDescription) > 200 {
 		log.Println("Invalid industry request: ", body.SicDescription)
-		c.JSON(http.StatusBadRequest, fmt.Sprintf("Invalid industry: %s", body.SicDescription))
+		c.String(http.StatusBadRequest, fmt.Sprintf("Invalid industry: %s", body.SicDescription))
 		return
 	}
 

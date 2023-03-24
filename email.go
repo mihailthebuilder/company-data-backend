@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
@@ -12,13 +13,17 @@ import (
 
 func handleRequestToSendEmail(c *gin.Context) {
 
-	plainTextContent := "and easy to do anywhere, even with Go"
-	htmlContent := "<strong>and easy to do anywhere, even with Go</strong>"
+	var body EmailRequestBody
+	if err := c.ShouldBindJSON(&body); err != nil {
+		log.Println("error parsing request body:", err)
+		c.String(http.StatusBadRequest, "error parsing request body")
+	}
 
+	emailContent := fmt.Sprintf("Received email from: %s . Message: %s.", body.EmailAddress, body.Request)
 	from := mail.NewEmail("Sender", getEnv("EMAIL_SENDER"))
 	subject := "Company Database - Email"
 	to := mail.NewEmail("Recipient", getEnv("EMAIL_RECIPIENT"))
-	message := mail.NewSingleEmail(from, subject, to, plainTextContent, htmlContent)
+	message := mail.NewSingleEmailPlainText(from, subject, to, emailContent)
 	client := sendgrid.NewSendClient(getEnv("EMAIL_API_KEY"))
 
 	response, err := client.Send(message)
@@ -31,4 +36,9 @@ func handleRequestToSendEmail(c *gin.Context) {
 	}
 
 	c.Status(http.StatusOK)
+}
+
+type EmailRequestBody struct {
+	EmailAddress string
+	Request      string
 }

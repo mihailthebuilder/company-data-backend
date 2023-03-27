@@ -80,7 +80,7 @@ func getCompaniesSample(sic *string) []ProcessedCompany {
 		AND cb."CompanyStatus" = 'Active'
 		AND cb."Accounts.AccountCategory" != 'DORMANT'
 	ORDER BY RANDOM()
-	LIMIT 20
+	LIMIT 10
 	`
 
 	rows, err := dbConn.Query(template, *sic)
@@ -115,6 +115,8 @@ func getCompaniesSample(sic *string) []ProcessedCompany {
 
 		companies = append(companies, processedCompany)
 	}
+
+	log.Printf("returning %d companies for sic \"%s\"", len(companies), *sic)
 
 	return companies
 }

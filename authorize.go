@@ -73,14 +73,20 @@ func validateSigningMethod(token *jwt.Token) bool {
 }
 
 func claimsAreValid(token *jwt.Token) bool {
-	claims, ok := token.Claims.(jwt.RegisteredClaims)
+	claims, ok := token.Claims.(jwt.MapClaims)
 
 	if !ok {
 		log.Println("token claim type is invalid: ", claims)
 		return false
 	}
 
-	expired := claims.ExpiresAt.Before(time.Now())
+	expirationTime, err := claims.GetExpirationTime()
+	if err != nil {
+		log.Println("unable to get expiration time from token claim: ", claims)
+	}
+
+	expired := expirationTime.Before(time.Now())
+
 	if expired {
 		log.Println("token expired: ", claims)
 	}

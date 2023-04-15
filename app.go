@@ -14,7 +14,7 @@ func runApplication() {
 	r.POST("/companies/sample", handleRequestForCompaniesSample)
 	r.POST("/register", handleRegistration)
 
-	authorised := r.Group("/authorised", handleAuthorisation)
+	authorised := r.Group("/authorized", verifyAuthorization)
 	{
 		authorised.POST("/companies", handleRequestForEntireList)
 	}

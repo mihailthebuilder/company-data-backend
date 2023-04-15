@@ -14,7 +14,7 @@ import (
 func handleRegistration(c *gin.Context) {
 	err := saveRegistration(c)
 	if err != nil {
-		log.Panic("Registration failed:", err)
+		log.Panic("Registration error:", err)
 	}
 
 	token, err := generateJwtToken()
@@ -27,7 +27,22 @@ func handleRegistration(c *gin.Context) {
 }
 
 func saveRegistration(c *gin.Context) error {
+	var body RegistrationRequestBody
+	if err := c.ShouldBindJSON(&body); err != nil {
+		return fmt.Errorf("failed parsing request body: %s", err)
+	}
+
+	if len(body.Email) == 0 || len(body.ReasonForWantingData) == 0 || len(body.ProblemBeingSolved) == 0 {
+		return fmt.Errorf("request body doesn't have all required attributes: %s", body)
+	}
+
 	return nil
+}
+
+type RegistrationRequestBody struct {
+	Email                string
+	ReasonForWantingData string
+	ProblemBeingSolved   string
 }
 
 func generateJwtToken() (string, error) {

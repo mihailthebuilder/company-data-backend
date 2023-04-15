@@ -12,7 +12,7 @@ func runApplication() {
 	allowAllOriginsForCORS(r)
 
 	r.POST("/companies/sample", handleRequestForCompaniesSample)
-	r.POST("/authenticate", handleAuthentication)
+	r.POST("/register", handleRegistration)
 
 	r.Run()
 }

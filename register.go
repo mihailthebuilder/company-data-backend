@@ -11,7 +11,12 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func handleAuthentication(c *gin.Context) {
+func handleRegistration(c *gin.Context) {
+	err := saveRegistration(c)
+	if err != nil {
+		log.Panic("Registration failed:", err)
+	}
+
 	token, err := generateJwtToken()
 
 	if err != nil {
@@ -19,6 +24,10 @@ func handleAuthentication(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"token": token})
+}
+
+func saveRegistration(c *gin.Context) error {
+	return nil
 }
 
 func generateJwtToken() (string, error) {

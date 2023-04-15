@@ -12,7 +12,6 @@ func runApplication() {
 	allowAllOriginsForCORS(r)
 
 	r.POST("/companies/sample", handleRequestForCompaniesSample)
-	r.POST("/email", handleRequestToSendEmail)
 
 	r.Run()
 }

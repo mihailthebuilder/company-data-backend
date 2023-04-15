@@ -7,5 +7,12 @@ import (
 )
 
 func handleAuthentication(c *gin.Context) {
-	c.JSON(http.StatusOK, "")
+	token := generateToken()
+
+	c.JSON(http.StatusOK, gin.H{"token": *token})
+}
+
+func generateToken() *string {
+	out := "helloworld"
+	return &out
 }

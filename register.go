@@ -81,8 +81,9 @@ func generateJwtToken() (string, error) {
 		return "", fmt.Errorf("failed to parse token lifespan: %s", err)
 	}
 
-	claims := jwt.MapClaims{}
-	claims["exp"] = time.Now().Add(time.Minute * time.Duration(tokenLifespanInMinutes)).Unix()
+	claims := jwt.RegisteredClaims{
+		ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute * time.Duration(tokenLifespanInMinutes))),
+	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
 	return token.SignedString([]byte(getEnv("API_SECRET")))

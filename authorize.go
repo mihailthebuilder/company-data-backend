@@ -48,10 +48,14 @@ func isValidTokenString(tokenString *string) (bool, error) {
 	}
 
 	if !token.Valid {
+		log.Println("parsing returns invalid token")
 		return false, nil
 	}
 
 	valid := claimsAreValid(token)
+	if !valid {
+		log.Println("invalid token claims")
+	}
 
 	return valid, nil
 }

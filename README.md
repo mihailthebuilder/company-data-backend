@@ -26,6 +26,11 @@ Test endpoints...
 curl -X POST http://localhost:8080/register -d '{"EmailAddress":"hello@test.com", "ReasonForWantingData":"the new oil", "ProblemBeingSolved":"ruling the world"}'
 ```
 
+- full
+```
+curl -X POST http://localhost:8080/authorised/companies -d '{"SicDescription":"Extraction of salt"}'
+```
+
 - sample
 ```
 curl -X POST http://localhost:8080/companies/sample -d '{"SicDescription":"Extraction of salt"}'

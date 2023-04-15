@@ -33,10 +33,6 @@ type SampleRequestBody struct {
 	SicDescription string
 }
 
-type RequestBody struct {
-	SicDescription string `json:"sicDescription"`
-}
-
 type CompanyRow struct {
 	CompanyName       string
 	CompanyNumber     string

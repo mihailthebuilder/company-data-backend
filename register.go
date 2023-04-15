@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 	"net/http"
@@ -32,15 +33,26 @@ func saveRegistration(c *gin.Context) error {
 		return fmt.Errorf("failed parsing request body: %s", err)
 	}
 
-	if len(body.Email) == 0 || len(body.ReasonForWantingData) == 0 || len(body.ProblemBeingSolved) == 0 {
+	if len(body.EmailAddress) == 0 || len(body.ReasonForWantingData) == 0 || len(body.ProblemBeingSolved) == 0 {
 		return fmt.Errorf("request body doesn't have all required attributes: %s", body)
+	}
+
+	emailRequestBody := []byte("")
+	response, err := http.Post(getEnv("EMAIL_API_URL"), "application/json", bytes.NewBuffer(emailRequestBody))
+
+	if err != nil {
+		return fmt.Errorf("failed sending email request: %s", err)
+	}
+
+	if response.StatusCode != http.StatusOK {
+		return fmt.Errorf("bad response from email request. status code %d ; status %s", response.StatusCode, response.Status)
 	}
 
 	return nil
 }
 
 type RegistrationRequestBody struct {
-	Email                string
+	EmailAddress         string
 	ReasonForWantingData string
 	ProblemBeingSolved   string
 }

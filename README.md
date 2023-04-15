@@ -23,7 +23,7 @@ Test endpoints...
 
 - authenticate
 ```
-curl -X POST http://localhost:8080/register -d '{"EmailAddress":"hello@test.com", "Request":"hello world"}'
+curl -X POST http://localhost:8080/register -d '{"EmailAddress":"hello@test.com", "ReasonForWantingData":"the new oil", "ProblemBeingSolved":"ruling the world"}'
 ```
 
 - sample

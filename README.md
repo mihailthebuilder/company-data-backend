@@ -19,14 +19,14 @@ Deploy to Hetzner server with Caprover:
 caprover deploy --default
 ```
 
-Test email endpoint
+Test endpoints...
 
+- authenticate
 ```
-curl -X POST http://localhost:8080/email -d '{"EmailAddress":"hello@test.com", "Request":"hello world"}'
+curl -X POST http://localhost:8080/authenticate -d '{"EmailAddress":"hello@test.com", "Request":"hello world"}'
 ```
 
-Test sampler endpoint
-
+- sample
 ```
 curl -X POST http://localhost:8080/companies/sample -d '{"SicDescription":"Extraction of salt"}'
 ```

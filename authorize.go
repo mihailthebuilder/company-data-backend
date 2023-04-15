@@ -76,13 +76,13 @@ func claimsAreValid(token *jwt.Token) bool {
 	claims, ok := token.Claims.(jwt.RegisteredClaims)
 
 	if !ok {
-		log.Println("token claim type is invalid")
+		log.Println("token claim type is invalid: ", claims)
 		return false
 	}
 
 	expired := claims.ExpiresAt.Before(time.Now())
 	if expired {
-		log.Println("token expired")
+		log.Println("token expired: ", claims)
 	}
 
 	return !expired

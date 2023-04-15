@@ -53,9 +53,6 @@ func isValidTokenString(tokenString *string) (bool, error) {
 	}
 
 	valid := claimsAreValid(token)
-	if !valid {
-		log.Println("invalid token claims")
-	}
 
 	return valid, nil
 }
@@ -79,8 +76,14 @@ func claimsAreValid(token *jwt.Token) bool {
 	claims, ok := token.Claims.(jwt.RegisteredClaims)
 
 	if !ok {
+		log.Println("token claim type is invalid")
 		return false
 	}
 
-	return claims.ExpiresAt.Before(time.Now())
+	expired := claims.ExpiresAt.Before(time.Now())
+	if expired {
+		log.Println("token expired")
+	}
+
+	return !expired
 }

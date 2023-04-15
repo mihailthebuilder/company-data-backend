@@ -85,7 +85,7 @@ func getCompaniesSample(sic *string) []ProcessedCompany {
 
 	rows, err := dbConn.Query(template, *sic)
 	if err != nil {
-		log.Panic("Query error", err)
+		log.Panic("Query error: ", err)
 	}
 
 	for rows.Next() {

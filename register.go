@@ -14,13 +14,13 @@ import (
 func handleRegistration(c *gin.Context) {
 	err := saveRegistration(c)
 	if err != nil {
-		log.Panic("Registration error:", err)
+		log.Panic("Registration error: ", err)
 	}
 
 	token, err := generateJwtToken()
 
 	if err != nil {
-		log.Panic("Token generation error:", err)
+		log.Panic("Token generation error: ", err)
 	}
 
 	c.JSON(http.StatusOK, gin.H{"token": token})

@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -37,8 +38,18 @@ func saveRegistration(c *gin.Context) error {
 		return fmt.Errorf("request body doesn't have all required attributes: %s", body)
 	}
 
-	emailRequestBody := []byte("")
-	response, err := http.Post(getEnv("EMAIL_API_URL"), "application/json", bytes.NewBuffer(emailRequestBody))
+	emailRequestBody := EmailApiRequestBody{
+		EmailAddress: body.EmailAddress,
+		Title:        "Company Data - Registration request",
+		Message:      fmt.Sprintf("Reason for wanting data: %s . Problem being solved: %s", body.ReasonForWantingData, body.ProblemBeingSolved),
+	}
+
+	emailRequestBodyString, err := json.Marshal(emailRequestBody)
+	if err != nil {
+		return fmt.Errorf("failed marshalling request: %s", err)
+	}
+
+	response, err := http.Post(getEnv("EMAIL_API_URL"), "application/json", bytes.NewBuffer(emailRequestBodyString))
 
 	if err != nil {
 		return fmt.Errorf("failed sending email request: %s", err)
@@ -55,6 +66,12 @@ type RegistrationRequestBody struct {
 	EmailAddress         string
 	ReasonForWantingData string
 	ProblemBeingSolved   string
+}
+
+type EmailApiRequestBody struct {
+	EmailAddress string
+	Title        string
+	Message      string
 }
 
 func generateJwtToken() (string, error) {

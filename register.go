@@ -51,9 +51,7 @@ func (r *RegistrationController) saveRegistration() error {
 		Message:      fmt.Sprintf("Reason for wanting data: %s . Problem being solved: %s", body.ReasonForWantingData, body.ProblemBeingSolved),
 	}
 
-	r.RouterConfing.Emailer.SendEmail(&details)
-
-	return nil
+	return r.RouterConfing.Emailer.SendEmail(&details)
 }
 
 type RegistrationRequestBody struct {

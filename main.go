@@ -32,6 +32,7 @@ type RouterConfig struct {
 	Emailer                   IEmailer
 	JwtTokenLifespanInMinutes string
 	ApiSecret                 string
+	Database                  IDatabase
 }
 
 func isRunningLocally() bool {

@@ -3,7 +3,6 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"log"
 	"strings"
 )
 
@@ -15,7 +14,11 @@ type Database struct {
 }
 
 func (d *Database) GetSampleListOfCompaniesForIndustry(industry *string) (*[]ProcessedCompany, error) {
-	conn := getDatabaseConnection()
+	conn, err := getDatabaseConnection()
+	if err != nil {
+		return nil, fmt.Errorf("error fetching database connection: %s", err)
+	}
+
 	defer conn.Close()
 
 	var companies []ProcessedCompany
@@ -43,7 +46,7 @@ func (d *Database) GetSampleListOfCompaniesForIndustry(industry *string) (*[]Pro
 
 	rows, err := conn.Query(template, *industry)
 	if err != nil {
-		log.Panic("Query error: ", err)
+		return nil, fmt.Errorf("query error: %s", err)
 	}
 
 	for rows.Next() {
@@ -60,7 +63,7 @@ func (d *Database) GetSampleListOfCompaniesForIndustry(industry *string) (*[]Pro
 			&companyRow.AccountCategory,
 		)
 		if err != nil {
-			log.Panic("Error scanning db row: ", err)
+			return nil, fmt.Errorf("error scanning db row: %s", err)
 		}
 
 		processedCompany := ProcessedCompany{
@@ -96,15 +99,15 @@ type ProcessedCompany struct {
 	IncorporationDate string `json:"incorporationDate"`
 }
 
-func getDatabaseConnection() *sql.DB {
+func getDatabaseConnection() (*sql.DB, error) {
 	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", getEnv("DB_HOST"), getEnv("DB_PORT"), getEnv("DB_USER"), getEnv("DB_PASSWORD"), getEnv("DB_NAME"))
 
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
-		log.Panic("Error opening database connection: ", err)
+		return nil, fmt.Errorf("error opening database connection: %s", err)
 	}
 
-	return db
+	return db, nil
 }
 
 func calculateCompanySize(accountCategory string) string {

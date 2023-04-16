@@ -133,3 +133,39 @@ func TestFullRoute_ShouldReturnUnauthorizedWhenNoJwtToken(t *testing.T) {
 
 	assert.Equal(t, http.StatusUnauthorized, w.Code)
 }
+
+func TestAuthorizationRouteToFullRouteFlow_HappyPath(t *testing.T) {
+	d := MockDatabase{}
+	industry := "Extraction of salt"
+	d.On("GetListOfCompanies", &industry, false).Return(&[]ProcessedCompany{{}}, nil)
+
+	body := RegistrationRequestBody{
+		EmailAddress:         "hello@world.com",
+		ReasonForWantingData: "power",
+		ProblemBeingSolved:   "more power",
+	}
+
+	e := MockEmailer{}
+	e.On("SendEmail", &EmailDetails{EmailAddress: "hello@world.com", Title: "Company Data - Registration request", Message: fmt.Sprintf("Reason for wanting data: %s . Problem being solved: %s", body.ReasonForWantingData, body.ProblemBeingSolved)}).Return(nil)
+
+	var handler = RouteHandler{
+		Emailer:                   e,
+		JwtTokenLifespanInMinutes: "60",
+		ApiSecret:                 "helloWorld",
+		Database:                  d,
+	}
+
+	r := createRouter(&handler)
+
+	w := httptest.NewRecorder()
+
+	requestBody, _ := json.Marshal(body)
+
+	req, _ := http.NewRequest("POST", "/register", bytes.NewBuffer(requestBody))
+	r.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	req, _ = http.NewRequest("POST", "/companies/authorized/full", bytes.NewReader([]byte(`{"SicDescription":"Extraction of salt"}`)))
+	r.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+}

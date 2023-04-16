@@ -147,45 +147,52 @@ func TestFullRoute_ShouldReturnUnauthorizedWhenNoJwtToken(t *testing.T) {
 	assert.Equal(t, http.StatusUnauthorized, w.Code)
 }
 
-// func TestAuthorizationRouteToFullRouteFlow_HappyPath(t *testing.T) {
-// 	d := MockDatabase{}
-// 	industry := "Extraction of salt"
-// 	d.On("GetListOfCompanies", &industry, false).Return(&[]ProcessedCompany{{}}, nil)
+func TestAuthorizationRouteToFullRouteFlow_HappyPath(t *testing.T) {
+	d := MockDatabase{}
+	industry := "Extraction of salt"
+	d.On("GetListOfCompanies", &industry, false).Return(&[]ProcessedCompany{{}}, nil)
 
-// 	body := RegistrationRequestBody{
-// 		EmailAddress:         "hello@world.com",
-// 		ReasonForWantingData: "power",
-// 		ProblemBeingSolved:   "more power",
-// 	}
+	registrationRequest := RegistrationRequestBody{
+		EmailAddress:         "hello@world.com",
+		ReasonForWantingData: "power",
+		ProblemBeingSolved:   "more power",
+	}
 
-// 	e := MockEmailAPI{}
-// 	e.On("SendEmail", &EmailDetails{EmailAddress: "hello@world.com", Title: "Company Data - Registration request", Message: fmt.Sprintf("Reason for wanting data: %s . Problem being solved: %s", body.ReasonForWantingData, body.ProblemBeingSolved)}).Return(nil)
+	e := MockEmailAPI{}
 
-// 	var handler = RouteHandler{
-// 		Emailer:                   e,
-// 		JwtTokenLifespanInMinutes: "60",
-// 		ApiSecret:                 "helloWorld",
-// 		Database:                  d,
-// 	}
+	emailRequest, _ := json.Marshal(EmailDetails{
+		EmailAddress: registrationRequest.EmailAddress,
+		Title:        "Company Data - Registration request",
+		Message:      fmt.Sprintf("Reason for wanting data: %s . Problem being solved: %s", registrationRequest.ReasonForWantingData, registrationRequest.ProblemBeingSolved),
+	})
 
-// 	r := createRouter(&handler)
+	e.On("SendRequest", bytes.NewReader(emailRequest)).Return(&http.Response{StatusCode: 200}, nil)
 
-// 	w := httptest.NewRecorder()
+	var handler = RouteHandler{
+		EmailAPI:                  e,
+		JwtTokenLifespanInMinutes: "60",
+		ApiSecret:                 "helloWorld",
+		Database:                  d,
+	}
 
-// 	requestBody, _ := json.Marshal(body)
+	r := createRouter(&handler)
 
-// 	req, _ := http.NewRequest("POST", "/register", bytes.NewBuffer(requestBody))
-// 	r.ServeHTTP(w, req)
-// 	assert.Equal(t, http.StatusOK, w.Code)
+	w := httptest.NewRecorder()
 
-// 	var responseBody map[string]string
-// 	json.Unmarshal(w.Body.Bytes(), &responseBody)
+	requestBody, _ := json.Marshal(registrationRequest)
 
-// 	w = httptest.NewRecorder()
-// 	req, _ = http.NewRequest("POST", "/companies/authorized/full", bytes.NewReader([]byte(`{"SicDescription":"Extraction of salt"}`)))
-// 	req.Header = map[string][]string{
-// 		"Authorization": {fmt.Sprintf("Bearer %s", responseBody["token"])},
-// 	}
-// 	r.ServeHTTP(w, req)
-// 	assert.Equal(t, http.StatusOK, w.Code)
-// }
+	req, _ := http.NewRequest("POST", "/register", bytes.NewBuffer(requestBody))
+	r.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var responseBody map[string]string
+	json.Unmarshal(w.Body.Bytes(), &responseBody)
+
+	w = httptest.NewRecorder()
+	req, _ = http.NewRequest("POST", "/companies/authorized/full", bytes.NewReader([]byte(`{"SicDescription":"Extraction of salt"}`)))
+	req.Header = map[string][]string{
+		"Authorization": {fmt.Sprintf("Bearer %s", responseBody["token"])},
+	}
+	r.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+}

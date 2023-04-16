@@ -43,7 +43,7 @@ func saveRegistration(c *gin.Context) error {
 		Message:      fmt.Sprintf("Reason for wanting data: %s . Problem being solved: %s", body.ReasonForWantingData, body.ProblemBeingSolved),
 	}
 
-	config.Emailer.SendEmail(details)
+	config.Emailer.SendEmail(&details)
 
 	return nil
 }

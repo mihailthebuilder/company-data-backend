@@ -8,7 +8,7 @@ import (
 )
 
 type IEmailer interface {
-	SendEmail(details EmailDetails) error
+	SendEmail(details *EmailDetails) error
 }
 
 type EmailDetails struct {
@@ -21,8 +21,8 @@ type Emailer struct {
 	EmailApiUrl string
 }
 
-func (e *Emailer) SendEmail(details EmailDetails) error {
-	requestBody, err := json.Marshal(details)
+func (e *Emailer) SendEmail(details *EmailDetails) error {
+	requestBody, err := json.Marshal(*details)
 	if err != nil {
 		return fmt.Errorf("failed marshalling request: %s", err)
 	}

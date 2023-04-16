@@ -5,7 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func runApplication() {
+func runServer() {
 	r := gin.Default()
 
 	serverRecoversFromAnyPanicAndWrites500(r)

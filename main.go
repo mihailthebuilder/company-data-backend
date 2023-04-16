@@ -13,7 +13,7 @@ func main() {
 		loadEnvironmentVariablesFromDotEnvFile()
 	}
 
-	runApplication()
+	runServer()
 }
 
 func isRunningLocally() bool {

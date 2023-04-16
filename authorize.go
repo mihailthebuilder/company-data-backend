@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"net/http"
 	"strings"
 	"time"
 
@@ -13,16 +14,22 @@ import (
 func verifyAuthorization(c *gin.Context) {
 	token, err := extractBearerToken(c)
 	if err != nil {
-		log.Panic("error extracting token: ", err)
+		log.Println("error extracting token: ", err)
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
 	}
 
 	valid, err := isValidTokenString(token)
 	if err != nil {
-		log.Panic("error validating token: ", err)
+		log.Println("error validating token: ", err)
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
 	}
 
 	if !valid {
-		c.AbortWithStatus(401)
+		log.Println("invalid token")
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
 	}
 }
 

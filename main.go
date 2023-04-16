@@ -65,7 +65,7 @@ func createRouter(handler *RouteHandler) *gin.Engine {
 	{
 		companies.POST("/sample", handler.CompanySample)
 
-		authorised := r.Group("/authorized", verifyAuthorization)
+		authorised := companies.Group("/authorized", verifyAuthorization)
 		{
 			authorised.POST("/full", handleRequestForEntireList)
 		}

@@ -122,3 +122,14 @@ func (e MockDatabase) GetListOfCompanies(i *string, s bool) (*[]ProcessedCompany
 	args := e.Called(i, s)
 	return args.Get(0).(*[]ProcessedCompany), args.Error(1)
 }
+
+func TestFullRoute_ShouldReturnUnauthorizedWhenNoJwtToken(t *testing.T) {
+	handler := RouteHandler{}
+	r := createRouter(&handler)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/companies/authorized/full", bytes.NewReader([]byte(`{"SicDescription":"Extraction of salt"}`)))
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+}

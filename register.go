@@ -12,23 +12,32 @@ import (
 )
 
 func handleRegistration(c *gin.Context) {
-	err := saveRegistration(c)
+	r := RegistrationController{
+		Context:       c,
+		RouterConfing: c.MustGet("config").(*RouterConfig),
+	}
+
+	err := r.saveRegistration()
 	if err != nil {
 		log.Panic("Registration error: ", err)
 	}
 
-	token, err := generateJwtToken()
-
+	token, err := r.generateJwtToken()
 	if err != nil {
 		log.Panic("Token generation error: ", err)
 	}
 
-	c.JSON(http.StatusOK, gin.H{"token": token})
+	r.returnResponse(token)
 }
 
-func saveRegistration(c *gin.Context) error {
+type RegistrationController struct {
+	Context       *gin.Context
+	RouterConfing *RouterConfig
+}
+
+func (r *RegistrationController) saveRegistration() error {
 	var body RegistrationRequestBody
-	if err := c.ShouldBindJSON(&body); err != nil {
+	if err := r.Context.ShouldBindJSON(&body); err != nil {
 		return fmt.Errorf("failed parsing request body: %s", err)
 	}
 
@@ -36,14 +45,13 @@ func saveRegistration(c *gin.Context) error {
 		return fmt.Errorf("request body doesn't have all required attributes: %s", body)
 	}
 
-	config := c.MustGet("config").(*RouterConfig)
 	details := EmailDetails{
 		EmailAddress: body.EmailAddress,
 		Title:        "Company Data - Registration request",
 		Message:      fmt.Sprintf("Reason for wanting data: %s . Problem being solved: %s", body.ReasonForWantingData, body.ProblemBeingSolved),
 	}
 
-	config.Emailer.SendEmail(&details)
+	r.RouterConfing.Emailer.SendEmail(&details)
 
 	return nil
 }
@@ -54,11 +62,11 @@ type RegistrationRequestBody struct {
 	ProblemBeingSolved   string
 }
 
-func generateJwtToken() (string, error) {
+func (r *RegistrationController) generateJwtToken() (*string, error) {
 	tokenLifespanInMinutes, err := strconv.Atoi(getEnv("TOKEN_MINUTE_LIFESPAN"))
 
 	if err != nil {
-		return "", fmt.Errorf("failed to parse token lifespan: %s", err)
+		return nil, fmt.Errorf("failed to parse token lifespan: %s", err)
 	}
 
 	claims := jwt.RegisteredClaims{
@@ -66,5 +74,11 @@ func generateJwtToken() (string, error) {
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	return token.SignedString([]byte(getEnv("API_SECRET")))
+	str, err := token.SignedString([]byte(getEnv("API_SECRET")))
+
+	return &str, err
+}
+
+func (r *RegistrationController) returnResponse(token *string) {
+	r.Context.JSON(http.StatusOK, gin.H{"token": token})
 }

@@ -15,7 +15,7 @@ func main() {
 		loadEnvironmentVariablesFromDotEnvFile()
 	}
 
-	c := &Env{
+	c := &RouteHandler{
 		Emailer: &Emailer{
 			EmailApiUrl: getEnv("EMAIL_API_URL"),
 		},
@@ -28,7 +28,7 @@ func main() {
 	r.Run()
 }
 
-type Env struct {
+type RouteHandler struct {
 	Emailer                   IEmailer
 	JwtTokenLifespanInMinutes string
 	ApiSecret                 string
@@ -46,14 +46,14 @@ func loadEnvironmentVariablesFromDotEnvFile() {
 	}
 }
 
-func createRouter(env *Env) *gin.Engine {
+func createRouter(handler *RouteHandler) *gin.Engine {
 	r := gin.Default()
 
 	serverRecoversFromAnyPanicAndWrites500(r)
 	allowAllOriginsForCORS(r)
 
 	r.POST("/companies/sample", handleRequestForCompaniesSample)
-	r.POST("/register", env.handleRegistration)
+	r.POST("/register", handler.Registration)
 
 	authorised := r.Group("/authorized", verifyAuthorization)
 	{

@@ -22,7 +22,7 @@ func (e MockEmailer) SendEmail(d *EmailDetails) error {
 }
 
 func TestRegisterRoute_ShouldReturnInvalidRequestWhenFormDataNotGiven(t *testing.T) {
-	var config = Env{}
+	var config = RouteHandler{}
 	r := createRouter(&config)
 
 	w := httptest.NewRecorder()
@@ -33,7 +33,7 @@ func TestRegisterRoute_ShouldReturnInvalidRequestWhenFormDataNotGiven(t *testing
 }
 
 func TestRegisterRoute_ShouldReturnInvalidRequestWhenPartialFormDataGiven(t *testing.T) {
-	var config = Env{}
+	var config = RouteHandler{}
 	r := createRouter(&config)
 
 	w := httptest.NewRecorder()
@@ -56,7 +56,7 @@ func TestRegisterRoute_ShouldReturnJwtTokenWhenFullFormDataGiven(t *testing.T) {
 	e := MockEmailer{}
 	e.On("SendEmail", &EmailDetails{EmailAddress: "hello@world.com", Title: "Company Data - Registration request", Message: fmt.Sprintf("Reason for wanting data: %s . Problem being solved: %s", body.ReasonForWantingData, body.ProblemBeingSolved)}).Return(nil)
 
-	var config = Env{
+	var config = RouteHandler{
 		Emailer:                   e,
 		JwtTokenLifespanInMinutes: "60",
 		ApiSecret:                 "helloWorld",
@@ -74,7 +74,7 @@ func TestRegisterRoute_ShouldReturnJwtTokenWhenFullFormDataGiven(t *testing.T) {
 }
 
 func TestSampleRoute_ShouldReturnInvalidRequestWhenNoDataGiven(t *testing.T) {
-	var config = Env{}
+	var config = RouteHandler{}
 	r := createRouter(&config)
 
 	w := httptest.NewRecorder()
@@ -85,7 +85,7 @@ func TestSampleRoute_ShouldReturnInvalidRequestWhenNoDataGiven(t *testing.T) {
 }
 
 func TestSampleRoute_ShouldReturnInvalidRequestWhenIndustryDoesNotExist(t *testing.T) {
-	var config = Env{}
+	var config = RouteHandler{}
 	r := createRouter(&config)
 
 	w := httptest.NewRecorder()

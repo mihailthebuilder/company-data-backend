@@ -11,7 +11,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func (e *Env) handleRegistration(c *gin.Context) {
+func (e *RouteHandler) Registration(c *gin.Context) {
 	err := saveRegistration(c, e.Emailer)
 	if err != nil {
 		log.Println("Registration error: ", err)
@@ -31,7 +31,7 @@ func (e *Env) handleRegistration(c *gin.Context) {
 
 type RegistrationController struct {
 	Context       *gin.Context
-	RouterConfing *Env
+	RouterConfing *RouteHandler
 }
 
 func saveRegistration(c *gin.Context, e IEmailer) error {

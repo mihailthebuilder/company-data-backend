@@ -1,8 +1,6 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -38,26 +36,14 @@ func saveRegistration(c *gin.Context) error {
 		return fmt.Errorf("request body doesn't have all required attributes: %s", body)
 	}
 
-	emailRequestBody := EmailApiRequestBody{
+	config := c.MustGet("config").(*RouterConfig)
+	details := EmailDetails{
 		EmailAddress: body.EmailAddress,
 		Title:        "Company Data - Registration request",
 		Message:      fmt.Sprintf("Reason for wanting data: %s . Problem being solved: %s", body.ReasonForWantingData, body.ProblemBeingSolved),
 	}
 
-	emailRequestBodyString, err := json.Marshal(emailRequestBody)
-	if err != nil {
-		return fmt.Errorf("failed marshalling request: %s", err)
-	}
-
-	response, err := http.Post(getEnv("EMAIL_API_URL"), "application/json", bytes.NewBuffer(emailRequestBodyString))
-
-	if err != nil {
-		return fmt.Errorf("failed sending email request: %s", err)
-	}
-
-	if response.StatusCode != http.StatusOK {
-		return fmt.Errorf("bad response from email request. status code %d ; status %s", response.StatusCode, response.Status)
-	}
+	config.Emailer.SendEmail(details)
 
 	return nil
 }

@@ -10,8 +10,10 @@ import (
 	"github.com/go-playground/assert/v2"
 )
 
+var config = RouterConfig{}
+
 func TestRegisterRoute_ShouldReturn500WhenFormDataNotGiven(t *testing.T) {
-	r := createRouter()
+	r := createRouter(&config)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", "/register", nil)
@@ -21,7 +23,7 @@ func TestRegisterRoute_ShouldReturn500WhenFormDataNotGiven(t *testing.T) {
 }
 
 func TestRegisterRoute_ShouldReturn500WhenPartialFormDataGiven(t *testing.T) {
-	r := createRouter()
+	r := createRouter(&config)
 
 	w := httptest.NewRecorder()
 
@@ -34,7 +36,7 @@ func TestRegisterRoute_ShouldReturn500WhenPartialFormDataGiven(t *testing.T) {
 }
 
 func TestRegisterRoute_ShouldReturnJwtTokenWhenFullFormDataGiven(t *testing.T) {
-	r := createRouter()
+	r := createRouter(&config)
 
 	w := httptest.NewRecorder()
 

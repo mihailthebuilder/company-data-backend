@@ -15,9 +15,19 @@ func main() {
 		loadEnvironmentVariablesFromDotEnvFile()
 	}
 
-	r := createRouter()
+	c := &RouterConfig{
+		Emailer: &Emailer{
+			EmailApiUrl: getEnv("EMAIL_API_URL"),
+		},
+	}
+
+	r := createRouter(c)
 
 	r.Run()
+}
+
+type RouterConfig struct {
+	Emailer IEmailer
 }
 
 func isRunningLocally() bool {
@@ -31,11 +41,12 @@ func loadEnvironmentVariablesFromDotEnvFile() {
 	}
 }
 
-func createRouter() *gin.Engine {
+func createRouter(config *RouterConfig) *gin.Engine {
 	r := gin.Default()
 
 	serverRecoversFromAnyPanicAndWrites500(r)
 	allowAllOriginsForCORS(r)
+	setCustomRouterConfig(r, config)
 
 	r.POST("/companies/sample", handleRequestForCompaniesSample)
 	r.POST("/register", handleRegistration)
@@ -54,4 +65,11 @@ func serverRecoversFromAnyPanicAndWrites500(engine *gin.Engine) {
 
 func allowAllOriginsForCORS(engine *gin.Engine) {
 	engine.Use(cors.Default())
+}
+
+func setCustomRouterConfig(engine *gin.Engine, config *RouterConfig) {
+	engine.Use(func(c *gin.Context) {
+		c.Set("config", config)
+		c.Next()
+	})
 }

@@ -16,9 +16,7 @@ func main() {
 	}
 
 	c := &RouteHandler{
-		Emailer: &Emailer{
-			EmailApiUrl: getEnv("EMAIL_API_URL"),
-		},
+		EmailAPI:                  &EmailAPI{URL: getEnv("EMAIL_API_URL")},
 		JwtTokenLifespanInMinutes: getEnv("TOKEN_MINUTE_LIFESPAN"),
 		ApiSecret:                 getEnv("API_SECRET"),
 		Database: &Database{
@@ -36,7 +34,7 @@ func main() {
 }
 
 type RouteHandler struct {
-	Emailer                   IEmailer
+	EmailAPI                  IEmailAPI
 	JwtTokenLifespanInMinutes string
 	ApiSecret                 string
 	Database                  IDatabase

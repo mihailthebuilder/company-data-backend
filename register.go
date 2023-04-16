@@ -27,7 +27,7 @@ func handleRegistration(c *gin.Context) {
 		log.Panic("Token generation error: ", err)
 	}
 
-	r.returnResponse(token)
+	r.Context.JSON(http.StatusOK, gin.H{"token": token})
 }
 
 type RegistrationController struct {
@@ -75,8 +75,4 @@ func (r *RegistrationController) generateJwtToken() (*string, error) {
 	str, err := token.SignedString([]byte(r.RouterConfing.ApiSecret))
 
 	return &str, err
-}
-
-func (r *RegistrationController) returnResponse(token *string) {
-	r.Context.JSON(http.StatusOK, gin.H{"token": token})
 }

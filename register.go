@@ -74,7 +74,7 @@ func (r *RegistrationController) generateJwtToken() (*string, error) {
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	str, err := token.SignedString([]byte(getEnv("API_SECRET")))
+	str, err := token.SignedString([]byte(r.RouterConfing.ApiSecret))
 
 	return &str, err
 }

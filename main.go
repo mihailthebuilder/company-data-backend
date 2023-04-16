@@ -20,6 +20,7 @@ func main() {
 			EmailApiUrl: getEnv("EMAIL_API_URL"),
 		},
 		JwtTokenLifespanInMinutes: getEnv("TOKEN_MINUTE_LIFESPAN"),
+		ApiSecret:                 getEnv("API_SECRET"),
 	}
 
 	r := createRouter(c)
@@ -30,6 +31,7 @@ func main() {
 type RouterConfig struct {
 	Emailer                   IEmailer
 	JwtTokenLifespanInMinutes string
+	ApiSecret                 string
 }
 
 func isRunningLocally() bool {

@@ -59,6 +59,7 @@ func TestRegisterRoute_ShouldReturnJwtTokenWhenFullFormDataGiven(t *testing.T) {
 	var config = RouterConfig{
 		Emailer:                   e,
 		JwtTokenLifespanInMinutes: "60",
+		ApiSecret:                 "helloWorld",
 	}
 	r := createRouter(&config)
 

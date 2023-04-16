@@ -63,7 +63,7 @@ type RegistrationRequestBody struct {
 }
 
 func (r *RegistrationController) generateJwtToken() (*string, error) {
-	tokenLifespanInMinutes, err := strconv.Atoi(getEnv("TOKEN_MINUTE_LIFESPAN"))
+	tokenLifespanInMinutes, err := strconv.Atoi(r.RouterConfing.JwtTokenLifespanInMinutes)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse token lifespan: %s", err)

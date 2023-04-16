@@ -16,6 +16,7 @@ func handleRequestForCompaniesSample(c *gin.Context) {
 	if err := c.ShouldBindJSON(&body); err != nil {
 		log.Println("error parsing request body:", err)
 		c.String(http.StatusBadRequest, "error parsing request body")
+		return
 	}
 
 	if len(body.SicDescription) == 0 || len(body.SicDescription) > 200 {

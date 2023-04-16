@@ -46,15 +46,14 @@ func loadEnvironmentVariablesFromDotEnvFile() {
 	}
 }
 
-func createRouter(config *Env) *gin.Engine {
+func createRouter(env *Env) *gin.Engine {
 	r := gin.Default()
 
 	serverRecoversFromAnyPanicAndWrites500(r)
 	allowAllOriginsForCORS(r)
-	setCustomRouterConfig(r, config)
 
 	r.POST("/companies/sample", handleRequestForCompaniesSample)
-	r.POST("/register", handleRegistration)
+	r.POST("/register", env.handleRegistration)
 
 	authorised := r.Group("/authorized", verifyAuthorization)
 	{
@@ -70,11 +69,4 @@ func serverRecoversFromAnyPanicAndWrites500(engine *gin.Engine) {
 
 func allowAllOriginsForCORS(engine *gin.Engine) {
 	engine.Use(cors.Default())
-}
-
-func setCustomRouterConfig(engine *gin.Engine, config *Env) {
-	engine.Use(func(c *gin.Context) {
-		c.Set("config", config)
-		c.Next()
-	})
 }

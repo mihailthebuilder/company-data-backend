@@ -11,27 +11,22 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func handleRegistration(c *gin.Context) {
-	r := RegistrationController{
-		Context:       c,
-		RouterConfing: c.MustGet("config").(*Env),
-	}
-
-	err := r.saveRegistration()
+func (e *Env) handleRegistration(c *gin.Context) {
+	err := saveRegistration(c, e.Emailer)
 	if err != nil {
 		log.Println("Registration error: ", err)
-		r.Context.AbortWithStatus(400)
+		c.AbortWithStatus(400)
 		return
 	}
 
-	token, err := r.generateJwtToken()
+	token, err := generateJwtToken(&e.ApiSecret, &e.JwtTokenLifespanInMinutes)
 	if err != nil {
 		log.Println("Token generation error: ", err)
-		r.Context.AbortWithStatus(500)
+		c.AbortWithStatus(500)
 		return
 	}
 
-	r.Context.JSON(http.StatusOK, gin.H{"token": token})
+	c.JSON(http.StatusOK, gin.H{"token": token})
 }
 
 type RegistrationController struct {
@@ -39,9 +34,9 @@ type RegistrationController struct {
 	RouterConfing *Env
 }
 
-func (r *RegistrationController) saveRegistration() error {
+func saveRegistration(c *gin.Context, e IEmailer) error {
 	var body RegistrationRequestBody
-	if err := r.Context.ShouldBindJSON(&body); err != nil {
+	if err := c.ShouldBindJSON(&body); err != nil {
 		return fmt.Errorf("failed parsing request body: %s", err)
 	}
 
@@ -55,7 +50,7 @@ func (r *RegistrationController) saveRegistration() error {
 		Message:      fmt.Sprintf("Reason for wanting data: %s . Problem being solved: %s", body.ReasonForWantingData, body.ProblemBeingSolved),
 	}
 
-	return r.RouterConfing.Emailer.SendEmail(&details)
+	return e.SendEmail(&details)
 }
 
 type RegistrationRequestBody struct {
@@ -64,8 +59,8 @@ type RegistrationRequestBody struct {
 	ProblemBeingSolved   string
 }
 
-func (r *RegistrationController) generateJwtToken() (*string, error) {
-	tokenLifespanInMinutes, err := strconv.Atoi(r.RouterConfing.JwtTokenLifespanInMinutes)
+func generateJwtToken(secret *string, lifespanInMinutes *string) (*string, error) {
+	tokenLifespanInMinutes, err := strconv.Atoi(*lifespanInMinutes)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse token lifespan: %s", err)
@@ -76,7 +71,7 @@ func (r *RegistrationController) generateJwtToken() (*string, error) {
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	str, err := token.SignedString([]byte(r.RouterConfing.ApiSecret))
+	str, err := token.SignedString([]byte(*secret))
 
 	return &str, err
 }

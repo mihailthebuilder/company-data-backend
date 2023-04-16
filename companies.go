@@ -10,12 +10,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func handleRequestForCompaniesSample(c *gin.Context) {
-
+func (h *RouteHandler) CollectAndVerifyIndustryRequested(c *gin.Context) {
 	var body SampleRequestBody
 	if err := c.ShouldBindJSON(&body); err != nil {
-		log.Println("error parsing request body:", err)
-		c.String(http.StatusBadRequest, "error parsing request body")
+		log.Println("error parsing request body: ", err)
+		c.AbortWithError(http.StatusBadRequest, fmt.Errorf("error parsing request body"))
 		return
 	}
 
@@ -25,35 +24,16 @@ func handleRequestForCompaniesSample(c *gin.Context) {
 		return
 	}
 
-	sample := getCompaniesSample(&body.SicDescription)
+	c.Set("Industry", &body.SicDescription)
 
-	c.JSON(http.StatusOK, sample)
+	c.Next()
 }
 
 type SampleRequestBody struct {
 	SicDescription string
 }
 
-type CompanyRow struct {
-	CompanyName       string
-	CompanyNumber     string
-	AddressLine1      string
-	AddressLine2      string
-	PostTown          string
-	PostCode          string
-	AccountCategory   string
-	IncorporationDate string
-}
-
-type ProcessedCompany struct {
-	Name              string `json:"name"`
-	CompaniesHouseUrl string `json:"companiesHouseUrl"`
-	Address           string `json:"address"`
-	Size              string `json:"size"`
-	IncorporationDate string `json:"incorporationDate"`
-}
-
-func getCompaniesSample(sic *string) []ProcessedCompany {
+func (h *RouteHandler) CompanySample(c *gin.Context) {
 	connectToDatabase()
 	defer dbConn.Close()
 
@@ -79,6 +59,8 @@ func getCompaniesSample(sic *string) []ProcessedCompany {
 	ORDER BY RANDOM()
 	LIMIT 10
 	`
+
+	sic := c.MustGet("Industry").(*string)
 
 	rows, err := dbConn.Query(template, *sic)
 	if err != nil {
@@ -115,7 +97,26 @@ func getCompaniesSample(sic *string) []ProcessedCompany {
 
 	log.Printf("returning %d companies for sic \"%s\"", len(companies), *sic)
 
-	return companies
+	c.JSON(http.StatusOK, companies)
+}
+
+type CompanyRow struct {
+	CompanyName       string
+	CompanyNumber     string
+	AddressLine1      string
+	AddressLine2      string
+	PostTown          string
+	PostCode          string
+	AccountCategory   string
+	IncorporationDate string
+}
+
+type ProcessedCompany struct {
+	Name              string `json:"name"`
+	CompaniesHouseUrl string `json:"companiesHouseUrl"`
+	Address           string `json:"address"`
+	Size              string `json:"size"`
+	IncorporationDate string `json:"incorporationDate"`
 }
 
 var dbConn *sql.DB

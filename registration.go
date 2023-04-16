@@ -11,15 +11,15 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func (e *RouteHandler) Registration(c *gin.Context) {
-	err := saveRegistration(c, e.Emailer)
+func (h *RouteHandler) Registration(c *gin.Context) {
+	err := saveRegistration(c, h.Emailer)
 	if err != nil {
 		log.Println("Registration error: ", err)
 		c.AbortWithStatus(400)
 		return
 	}
 
-	token, err := generateJwtToken(&e.ApiSecret, &e.JwtTokenLifespanInMinutes)
+	token, err := generateJwtToken(&h.ApiSecret, &h.JwtTokenLifespanInMinutes)
 	if err != nil {
 		log.Println("Token generation error: ", err)
 		c.AbortWithStatus(500)

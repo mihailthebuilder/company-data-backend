@@ -11,10 +11,15 @@ type IDatabase interface {
 }
 
 type Database struct {
+	Host     string
+	Port     string
+	User     string
+	Password string
+	Name     string
 }
 
 func (d *Database) GetSampleListOfCompaniesForIndustry(industry *string) (*[]ProcessedCompany, error) {
-	conn, err := getDatabaseConnection()
+	conn, err := d.getDatabaseConnection()
 	if err != nil {
 		return nil, fmt.Errorf("error fetching database connection: %s", err)
 	}
@@ -99,8 +104,8 @@ type ProcessedCompany struct {
 	IncorporationDate string `json:"incorporationDate"`
 }
 
-func getDatabaseConnection() (*sql.DB, error) {
-	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", getEnv("DB_HOST"), getEnv("DB_PORT"), getEnv("DB_USER"), getEnv("DB_PASSWORD"), getEnv("DB_NAME"))
+func (d *Database) getDatabaseConnection() (*sql.DB, error) {
+	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", d.Host, d.Port, d.User, d.Password, d.Name)
 
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {

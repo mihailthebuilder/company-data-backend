@@ -99,7 +99,7 @@ func TestSampleRoute_ShouldReturnData(t *testing.T) {
 	d := MockDatabase{}
 
 	industry := "Extraction of salt"
-	d.On("GetSampleListOfCompaniesForIndustry", &industry).Return(&[]ProcessedCompany{{}})
+	d.On("GetSampleListOfCompaniesForIndustry", &industry).Return(&[]ProcessedCompany{{}}, nil)
 
 	handler := RouteHandler{
 		Database: d,
@@ -111,7 +111,7 @@ func TestSampleRoute_ShouldReturnData(t *testing.T) {
 	req, _ := http.NewRequest("POST", "/companies/sample", bytes.NewReader([]byte(`{"SicDescription":"Extraction of salt"}`)))
 	r.ServeHTTP(w, req)
 
-	assert.Equal(t, 400, w.Code)
+	assert.Equal(t, http.StatusOK, w.Code)
 }
 
 type MockDatabase struct {

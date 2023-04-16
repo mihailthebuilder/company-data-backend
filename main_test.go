@@ -99,7 +99,7 @@ func TestSampleRoute_ShouldReturnData(t *testing.T) {
 	d := MockDatabase{}
 
 	industry := "Extraction of salt"
-	d.On("GetSampleListOfCompaniesForIndustry", &industry).Return(&[]ProcessedCompany{{}}, nil)
+	d.On("GetListOfCompanies", &industry, true).Return(&[]ProcessedCompany{{}}, nil)
 
 	handler := RouteHandler{
 		Database: d,
@@ -118,7 +118,7 @@ type MockDatabase struct {
 	mock.Mock
 }
 
-func (e MockDatabase) GetSampleListOfCompaniesForIndustry(i *string) (*[]ProcessedCompany, error) {
-	args := e.Called(i)
+func (e MockDatabase) GetListOfCompanies(i *string, s bool) (*[]ProcessedCompany, error) {
+	args := e.Called(i, s)
 	return args.Get(0).(*[]ProcessedCompany), args.Error(1)
 }

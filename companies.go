@@ -34,7 +34,7 @@ type SampleRequestBody struct {
 func (h *RouteHandler) CompanySample(c *gin.Context) {
 	industry := c.MustGet("Industry").(*string)
 
-	companies, err := h.Database.GetSampleListOfCompaniesForIndustry(industry)
+	companies, err := h.Database.GetListOfCompanies(industry, true)
 	if err != nil {
 		log.Printf("Failed to get database sample for sic %s. Error: %s", *industry, err)
 		c.AbortWithStatus(http.StatusInternalServerError)

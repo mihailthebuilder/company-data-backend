@@ -7,7 +7,7 @@ import (
 )
 
 type IDatabase interface {
-	GetSampleListOfCompaniesForIndustry(industry *string) (*[]ProcessedCompany, error)
+	GetListOfCompanies(industry *string, isSample bool) (*[]ProcessedCompany, error)
 }
 
 type Database struct {
@@ -18,7 +18,7 @@ type Database struct {
 	Name     string
 }
 
-func (d *Database) GetSampleListOfCompaniesForIndustry(industry *string) (*[]ProcessedCompany, error) {
+func (d *Database) GetListOfCompanies(industry *string, isSample bool) (*[]ProcessedCompany, error) {
 	conn, err := d.getDatabaseConnection()
 	if err != nil {
 		return nil, fmt.Errorf("error fetching database connection: %s", err)
@@ -28,28 +28,9 @@ func (d *Database) GetSampleListOfCompaniesForIndustry(industry *string) (*[]Pro
 
 	var companies []ProcessedCompany
 
-	template := `
-	SELECT cb."CompanyName", 
-		sc."CompanyNumber",
-		cb."RegAddress.AddressLine1",
-		cb."RegAddress.AddressLine2",
-		cb."RegAddress.PostTown",
-		cb."RegAddress.PostCode",
-		cb."IncorporationDate",
-		cb."Accounts.AccountCategory"
-	FROM "sic_company" sc
-	TABLESAMPLE SYSTEM (10)
-	JOIN "company_base" cb
-		ON sc."SicDescription" = $1
-		AND sc."Snapshot" = '2023-03-01'
-		AND cb."CompanyNumberSnapshot" = sc."CompanyNumberSnapshot"
-		AND cb."CompanyStatus" = 'Active'
-		AND cb."Accounts.AccountCategory" != 'DORMANT'
-	ORDER BY RANDOM()
-	LIMIT 10
-	`
+	template := getQueryTemplate(isSample)
 
-	rows, err := conn.Query(template, *industry)
+	rows, err := conn.Query(*template, *industry)
 	if err != nil {
 		return nil, fmt.Errorf("query error: %s", err)
 	}
@@ -165,3 +146,37 @@ var CompanyAccountRanking = map[string]int{
 	"TOTAL EXEMPTION SMALL":       2,
 	"UNAUDITED ABRIDGED":          2,
 }
+
+func getQueryTemplate(sample bool) *string {
+	var template string
+
+	if sample {
+		template = fmt.Sprintf(QUERY_TEMPLATE, "TABLESAMPLE SYSTEM (10)", "ORDER BY RANDOM()", "LIMIT 10")
+	} else {
+		template = fmt.Sprintf(QUERY_TEMPLATE, "", "", "")
+	}
+
+	return &template
+}
+
+const QUERY_TEMPLATE = `
+SELECT cb."CompanyName", 
+	sc."CompanyNumber",
+	cb."RegAddress.AddressLine1",
+	cb."RegAddress.AddressLine2",
+	cb."RegAddress.PostTown",
+	cb."RegAddress.PostCode",
+	cb."IncorporationDate",
+	cb."Accounts.AccountCategory"
+FROM "sic_company" sc
+%s
+JOIN "company_base" cb
+	ON sc."SicDescription" = $1
+	AND sc."Snapshot" = '2023-03-01'
+	AND cb."CompanyNumberSnapshot" = sc."CompanyNumberSnapshot"
+	AND cb."CompanyStatus" = 'Active'
+	AND cb."Accounts.AccountCategory" != 'DORMANT'
+%s
+%s
+;
+`

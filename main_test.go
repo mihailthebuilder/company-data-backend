@@ -21,7 +21,7 @@ func (e MockEmailer) SendEmail(d *EmailDetails) error {
 	return args.Error(0)
 }
 
-func TestRegisterRoute_ShouldReturn500WhenFormDataNotGiven(t *testing.T) {
+func TestRegisterRoute_ShouldReturnInternalErrorWhenFormDataNotGiven(t *testing.T) {
 	var config = RouterConfig{}
 	r := createRouter(&config)
 
@@ -32,7 +32,7 @@ func TestRegisterRoute_ShouldReturn500WhenFormDataNotGiven(t *testing.T) {
 	assert.Equal(t, 500, w.Code)
 }
 
-func TestRegisterRoute_ShouldReturn500WhenPartialFormDataGiven(t *testing.T) {
+func TestRegisterRoute_ShouldReturnInternalErrorWhenPartialFormDataGiven(t *testing.T) {
 	var config = RouterConfig{}
 	r := createRouter(&config)
 
@@ -71,4 +71,26 @@ func TestRegisterRoute_ShouldReturnJwtTokenWhenFullFormDataGiven(t *testing.T) {
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, 200, w.Code)
+}
+
+func TestSampleRoute_ShouldReturnInvalidRequestWhenNoDataGiven(t *testing.T) {
+	var config = RouterConfig{}
+	r := createRouter(&config)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/companies/sample", nil)
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, 400, w.Code)
+}
+
+func TestSampleRoute_ShouldReturnInvalidRequestWhenIndustryDoesNotExist(t *testing.T) {
+	var config = RouterConfig{}
+	r := createRouter(&config)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/companies/sample", bytes.NewReader([]byte("hello world")))
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, 400, w.Code)
 }

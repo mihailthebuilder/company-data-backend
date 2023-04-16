@@ -14,7 +14,7 @@ import (
 func handleRegistration(c *gin.Context) {
 	r := RegistrationController{
 		Context:       c,
-		RouterConfing: c.MustGet("config").(*RouterConfig),
+		RouterConfing: c.MustGet("config").(*Env),
 	}
 
 	err := r.saveRegistration()
@@ -36,7 +36,7 @@ func handleRegistration(c *gin.Context) {
 
 type RegistrationController struct {
 	Context       *gin.Context
-	RouterConfing *RouterConfig
+	RouterConfing *Env
 }
 
 func (r *RegistrationController) saveRegistration() error {

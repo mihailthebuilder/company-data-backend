@@ -15,7 +15,7 @@ func main() {
 		loadEnvironmentVariablesFromDotEnvFile()
 	}
 
-	c := &RouterConfig{
+	c := &Env{
 		Emailer: &Emailer{
 			EmailApiUrl: getEnv("EMAIL_API_URL"),
 		},
@@ -28,7 +28,7 @@ func main() {
 	r.Run()
 }
 
-type RouterConfig struct {
+type Env struct {
 	Emailer                   IEmailer
 	JwtTokenLifespanInMinutes string
 	ApiSecret                 string
@@ -46,7 +46,7 @@ func loadEnvironmentVariablesFromDotEnvFile() {
 	}
 }
 
-func createRouter(config *RouterConfig) *gin.Engine {
+func createRouter(config *Env) *gin.Engine {
 	r := gin.Default()
 
 	serverRecoversFromAnyPanicAndWrites500(r)
@@ -72,7 +72,7 @@ func allowAllOriginsForCORS(engine *gin.Engine) {
 	engine.Use(cors.Default())
 }
 
-func setCustomRouterConfig(engine *gin.Engine, config *RouterConfig) {
+func setCustomRouterConfig(engine *gin.Engine, config *Env) {
 	engine.Use(func(c *gin.Context) {
 		c.Set("config", config)
 		c.Next()

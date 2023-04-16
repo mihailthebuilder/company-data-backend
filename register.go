@@ -19,12 +19,16 @@ func handleRegistration(c *gin.Context) {
 
 	err := r.saveRegistration()
 	if err != nil {
-		log.Panic("Registration error: ", err)
+		log.Println("Registration error: ", err)
+		r.Context.AbortWithStatus(400)
+		return
 	}
 
 	token, err := r.generateJwtToken()
 	if err != nil {
-		log.Panic("Token generation error: ", err)
+		log.Println("Token generation error: ", err)
+		r.Context.AbortWithStatus(500)
+		return
 	}
 
 	r.Context.JSON(http.StatusOK, gin.H{"token": token})

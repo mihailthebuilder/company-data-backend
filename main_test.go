@@ -62,6 +62,8 @@ func TestRegisterRoute_ShouldReturnJwtTokenWhenFullFormDataGiven(t *testing.T) {
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
+	fmt.Println("HEADER IS ", w.Header())
+	fmt.Println("BODY IS ", w.Body.String())
 }
 
 type MockEmailer struct {
@@ -81,7 +83,7 @@ func TestSampleRoute_ShouldReturnInvalidRequestWhenNoBody(t *testing.T) {
 	req, _ := http.NewRequest("POST", "/companies/sample", nil)
 	r.ServeHTTP(w, req)
 
-	assert.Equal(t, 400, w.Code)
+	assert.Equal(t, http.StatusBadRequest, w.Code)
 }
 
 func TestSampleRoute_ShouldReturnInvalidRequestWhenInvalidJsonBody(t *testing.T) {
@@ -92,7 +94,7 @@ func TestSampleRoute_ShouldReturnInvalidRequestWhenInvalidJsonBody(t *testing.T)
 	req, _ := http.NewRequest("POST", "/companies/sample", bytes.NewReader([]byte("hello world")))
 	r.ServeHTTP(w, req)
 
-	assert.Equal(t, 400, w.Code)
+	assert.Equal(t, http.StatusBadRequest, w.Code)
 }
 
 func TestSampleRoute_ShouldReturnData(t *testing.T) {
@@ -165,6 +167,7 @@ func TestAuthorizationRouteToFullRouteFlow_HappyPath(t *testing.T) {
 	r.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
 
+	w = httptest.NewRecorder()
 	req, _ = http.NewRequest("POST", "/companies/authorized/full", bytes.NewReader([]byte(`{"SicDescription":"Extraction of salt"}`)))
 	r.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)

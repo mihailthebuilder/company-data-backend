@@ -11,8 +11,8 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func verifyAuthorization(c *gin.Context) {
-	token, err := extractBearerToken(c)
+func (h *RouteHandler) VerifyAuthorization(c *gin.Context) {
+	token, err := extractBearerTokenFromHeader(c.Request.Header.Get("Authorization"))
 	if err != nil {
 		log.Println("error extracting token: ", err)
 		c.AbortWithStatus(http.StatusUnauthorized)
@@ -33,8 +33,7 @@ func verifyAuthorization(c *gin.Context) {
 	}
 }
 
-func extractBearerToken(c *gin.Context) (*string, error) {
-	header := c.Request.Header.Get("Authorization")
+func extractBearerTokenFromHeader(header string) (*string, error) {
 	split := strings.Split(header, " ")
 
 	if len(split) != 2 {

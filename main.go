@@ -15,7 +15,9 @@ func main() {
 		loadEnvironmentVariablesFromDotEnvFile()
 	}
 
-	runServer()
+	r := createRouter()
+
+	r.Run()
 }
 
 func isRunningLocally() bool {
@@ -29,7 +31,7 @@ func loadEnvironmentVariablesFromDotEnvFile() {
 	}
 }
 
-func runServer() {
+func createRouter() *gin.Engine {
 	r := gin.Default()
 
 	serverRecoversFromAnyPanicAndWrites500(r)
@@ -43,7 +45,7 @@ func runServer() {
 		authorised.POST("/companies", handleRequestForEntireList)
 	}
 
-	r.Run()
+	return r
 }
 
 func serverRecoversFromAnyPanicAndWrites500(engine *gin.Engine) {

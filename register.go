@@ -54,12 +54,6 @@ type RegistrationRequestBody struct {
 	ProblemBeingSolved   string
 }
 
-type EmailApiRequestBody struct {
-	EmailAddress string
-	Title        string
-	Message      string
-}
-
 func generateJwtToken() (string, error) {
 	tokenLifespanInMinutes, err := strconv.Atoi(getEnv("TOKEN_MINUTE_LIFESPAN"))
 

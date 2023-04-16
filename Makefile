@@ -4,6 +4,3 @@ test:
 
 test-detail:
 	go test
-
-open-coverage:
-	start $(shell pwd)/coverage.html

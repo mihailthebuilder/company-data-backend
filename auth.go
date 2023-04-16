@@ -12,14 +12,14 @@ import (
 )
 
 func (h *RouteHandler) VerifyAuthorization(c *gin.Context) {
-	token, err := extractBearerTokenFromHeader(c.Request.Header.Get("Authorization"))
+	token, err := h.extractBearerTokenFromHeader(c.Request.Header.Get("Authorization"))
 	if err != nil {
 		log.Println("error extracting token: ", err)
 		c.AbortWithStatus(http.StatusUnauthorized)
 		return
 	}
 
-	valid, err := isValidTokenString(token)
+	valid, err := h.isValidTokenString(token)
 	if err != nil {
 		log.Println("error validating token: ", err)
 		c.AbortWithStatus(http.StatusUnauthorized)
@@ -33,7 +33,7 @@ func (h *RouteHandler) VerifyAuthorization(c *gin.Context) {
 	}
 }
 
-func extractBearerTokenFromHeader(header string) (*string, error) {
+func (h *RouteHandler) extractBearerTokenFromHeader(header string) (*string, error) {
 	split := strings.Split(header, " ")
 
 	if len(split) != 2 {
@@ -47,8 +47,8 @@ func extractBearerTokenFromHeader(header string) (*string, error) {
 	return &split[1], nil
 }
 
-func isValidTokenString(tokenString *string) (bool, error) {
-	token, err := getToken(tokenString)
+func (h *RouteHandler) isValidTokenString(tokenString *string) (bool, error) {
+	token, err := h.getToken(tokenString)
 	if err != nil {
 		return false, fmt.Errorf("unable to get token from string: %s", *tokenString)
 	}
@@ -63,13 +63,13 @@ func isValidTokenString(tokenString *string) (bool, error) {
 	return valid, nil
 }
 
-func getToken(tokenString *string) (*jwt.Token, error) {
+func (h *RouteHandler) getToken(tokenString *string) (*jwt.Token, error) {
 	return jwt.Parse(*tokenString, func(token *jwt.Token) (interface{}, error) {
 		if validMethod := validateSigningMethod(token); !validMethod {
 			return nil, fmt.Errorf("unexpected signing method: %s", token.Header["alg"])
 		}
 
-		return []byte(getEnv("API_SECRET")), nil
+		return []byte(h.ApiSecret), nil
 	})
 }
 

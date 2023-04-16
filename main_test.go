@@ -62,8 +62,11 @@ func TestRegisterRoute_ShouldReturnJwtTokenWhenFullFormDataGiven(t *testing.T) {
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
-	fmt.Println("HEADER IS ", w.Header())
-	fmt.Println("BODY IS ", w.Body.String())
+
+	var responseBody map[string]string
+	json.Unmarshal(w.Body.Bytes(), &responseBody)
+
+	assert.Equal(t, true, len(responseBody["token"]) > 0)
 }
 
 type MockEmailer struct {
@@ -167,8 +170,14 @@ func TestAuthorizationRouteToFullRouteFlow_HappyPath(t *testing.T) {
 	r.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
 
+	var responseBody map[string]string
+	json.Unmarshal(w.Body.Bytes(), &responseBody)
+
 	w = httptest.NewRecorder()
 	req, _ = http.NewRequest("POST", "/companies/authorized/full", bytes.NewReader([]byte(`{"SicDescription":"Extraction of salt"}`)))
+	req.Header = map[string][]string{
+		"Authorization": {fmt.Sprintf("Bearer %s", responseBody["token"])},
+	}
 	r.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
 }

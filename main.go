@@ -21,6 +21,13 @@ func main() {
 		},
 		JwtTokenLifespanInMinutes: getEnv("TOKEN_MINUTE_LIFESPAN"),
 		ApiSecret:                 getEnv("API_SECRET"),
+		Database: &Database{
+			Host:     getEnv("DB_HOST"),
+			Port:     getEnv("DB_PORT"),
+			User:     getEnv("DB_USER"),
+			Password: getEnv("DB_PASSWORD"),
+			Name:     getEnv("DB_NAME"),
+		},
 	}
 
 	r := createRouter(c)
@@ -57,11 +64,11 @@ func createRouter(handler *RouteHandler) *gin.Engine {
 	companies := r.Group("/companies", handler.CollectAndVerifyIndustryRequested)
 	{
 		companies.POST("/sample", handler.CompanySample)
-	}
 
-	authorised := r.Group("/authorized", verifyAuthorization)
-	{
-		authorised.POST("/companies", handleRequestForEntireList)
+		authorised := r.Group("/authorized", verifyAuthorization)
+		{
+			authorised.POST("/full", handleRequestForEntireList)
+		}
 	}
 
 	return r

@@ -69,10 +69,10 @@ func (d *Database) GetListOfCompanies(industry *string, isSample bool) (*[]Proce
 type CompanyRow struct {
 	CompanyName       string
 	CompanyNumber     string
-	AddressLine1      string
-	AddressLine2      string
-	PostTown          string
-	PostCode          string
+	AddressLine1      sql.NullString
+	AddressLine2      sql.NullString
+	PostTown          sql.NullString
+	PostCode          sql.NullString
 	AccountCategory   string
 	IncorporationDate string
 }
@@ -100,14 +100,18 @@ func calculateCompanySize(accountCategory string) string {
 	return AccountRankingToSize[CompanyAccountRanking[accountCategory]]
 }
 
-func generateAddress(addressEntries ...string) string {
+func generateAddress(addressEntries ...sql.NullString) string {
 	nonEmptyAddressEntries := []string{}
 
 	for _, entry := range addressEntries {
-		entryWithoutWhitespace := strings.TrimSpace(entry)
+		if !entry.Valid {
+			continue
+		}
+
+		entryWithoutWhitespace := strings.TrimSpace(entry.String)
 
 		if len(entryWithoutWhitespace) > 0 {
-			nonEmptyAddressEntries = append(nonEmptyAddressEntries, entry)
+			nonEmptyAddressEntries = append(nonEmptyAddressEntries, entry.String)
 		}
 	}
 
@@ -115,10 +119,12 @@ func generateAddress(addressEntries ...string) string {
 }
 
 var AccountRankingToSize = map[int]string{
-	0: "very small",
-	1: "small",
-	2: "medium",
-	3: "large",
+	0: "no accounts available / dormant",
+	1: "micro",
+	2: "small",
+	3: "medium",
+	4: "large",
+	5: "very large",
 }
 
 /*
@@ -130,20 +136,21 @@ Full – has a turnover of above GBP 10.2m or does not satisfy two or more of th
 
 var CompanyAccountRanking = map[string]int{
 	"ACCOUNTS TYPE NOT AVAILABLE": 0,
-	"AUDITED ABRIDGED":            2,
-	"AUDIT EXEMPTION SUBSIDIARY":  3,
-	"DORMANT":                     0,
-	"FILING EXEMPTION SUBSIDIARY": 3,
-	"FULL":                        3,
-	"GROUP":                       3,
-	"INITIAL":                     3,
-	"MEDIUM":                      3,
-	"MICRO ENTITY":                1,
 	"NO ACCOUNTS FILED":           0,
-	"PARTIAL EXEMPTION":           2,
+	"DORMANT":                     0,
+	"MICRO ENTITY":                1,
 	"SMALL":                       2,
-	"TOTAL EXEMPTION FULL":        2,
 	"TOTAL EXEMPTION SMALL":       2,
+	"TOTAL EXEMPTION FULL":        2,
+	"MEDIUM":                      3,
+	"FULL":                        4,
+	"GROUP":                       5,
+
+	"AUDITED ABRIDGED":            4,
+	"AUDIT EXEMPTION SUBSIDIARY":  2,
+	"FILING EXEMPTION SUBSIDIARY": 2,
+	"INITIAL":                     2,
+	"PARTIAL EXEMPTION":           2,
 	"UNAUDITED ABRIDGED":          2,
 }
 
@@ -160,22 +167,23 @@ func getQueryTemplate(sample bool) *string {
 }
 
 const QUERY_TEMPLATE = `
-SELECT cb."CompanyName", 
-	sc."CompanyNumber",
-	cb."RegAddress.AddressLine1",
-	cb."RegAddress.AddressLine2",
-	cb."RegAddress.PostTown",
-	cb."RegAddress.PostCode",
-	cb."IncorporationDate",
-	cb."Accounts.AccountCategory"
-FROM "sic_company" sc
+SELECT 
+	"CompanyName",
+	"CompanyNumber",
+	"RegAddress.AddressLine1",
+	"RegAddress.AddressLine2",
+	"RegAddress.PostTown",
+	"RegAddress.PostCode",
+	"IncorporationDate",
+	"Accounts.AccountCategory"
+FROM "ch_company"
 %s
-JOIN "company_base" cb
-	ON sc."SicDescription" = $1
-	AND sc."Snapshot" = '2023-03-01'
-	AND cb."CompanyNumberSnapshot" = sc."CompanyNumberSnapshot"
-	AND cb."CompanyStatus" = 'Active'
-	AND cb."Accounts.AccountCategory" != 'DORMANT'
+WHERE
+	$1 IN (
+		"SICCode.SicText_1", "SICCode.SicText_2", "SICCode.SicText_3", "SICCode.SicText_4"
+	)
+	AND "CompanyStatus" = 'Active'
+	AND "Accounts.AccountCategory" NOT IN ('DORMANT','NO ACCOUNTS FILED','ACCOUNTS TYPE NOT AVAILABLE')
 %s
 %s
 ;

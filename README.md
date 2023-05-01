@@ -28,10 +28,10 @@ curl -X POST http://localhost:8080/register -d '{"EmailAddress":"hello@test.com"
 
 - full
 ```
-curl -X POST http://localhost:8080/companies/authorized/full -H "Authorization: Bearer <enter_jwt_token>" -d '{"SicDescription":"Extraction of salt"}'
+curl -X POST http://localhost:8080/companies/authorized/full -H "Authorization: Bearer <enter_jwt_token>" -d '{"SicDescription":"Activities of mortgage finance companies"}'
 ```
 
 - sample
 ```
-curl -X POST http://localhost:8080/companies/sample -d '{"SicDescription":"Extraction of salt"}'
+curl -X POST http://localhost:8080/companies/sample -d '{"SicDescription":"Activities of mortgage finance companies"}'
 ```

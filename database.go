@@ -176,7 +176,7 @@ SELECT
 	"RegAddress.PostCode",
 	"IncorporationDate",
 	"Accounts.AccountCategory"
-FROM "ch_company"
+FROM "ch_company_2023_05_01"
 %s
 WHERE
 	$1 IN (

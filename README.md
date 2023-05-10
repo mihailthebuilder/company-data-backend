@@ -3,7 +3,7 @@
 Run the server locally:
 
 ```
-go run .
+make run
 ```
 
 Run Dockerised application locally, in production mode:

@@ -46,7 +46,7 @@ func (d *Database) GetListOfCompanies(industry *string, isSample bool) ([]Proces
 			&companyRow.PostTown,
 			&companyRow.PostCode,
 			&companyRow.IncorporationDate,
-			&companyRow.AccountCategory,
+			&companyRow.Size,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("error scanning db row: %s", err)
@@ -57,7 +57,7 @@ func (d *Database) GetListOfCompanies(industry *string, isSample bool) ([]Proces
 			CompaniesHouseUrl: fmt.Sprintf("https://find-and-update.company-information.service.gov.uk/company/%s", companyRow.CompanyNumber),
 			Address:           generateAddress(companyRow.AddressLine1, companyRow.AddressLine2, companyRow.PostTown, companyRow.PostCode),
 			IncorporationDate: companyRow.IncorporationDate,
-			Size:              calculateCompanySize(companyRow.AccountCategory),
+			Size:              companyRow.Size,
 		}
 
 		companies = append(companies, processedCompany)
@@ -73,7 +73,7 @@ type CompanyRow struct {
 	AddressLine2      sql.NullString
 	PostTown          sql.NullString
 	PostCode          sql.NullString
-	AccountCategory   string
+	Size              string
 	IncorporationDate string
 }
 
@@ -96,10 +96,6 @@ func (d *Database) getDatabaseConnection() (*sql.DB, error) {
 	return db, nil
 }
 
-func calculateCompanySize(accountCategory string) string {
-	return AccountRankingToSize[CompanyAccountRanking[accountCategory]]
-}
-
 func generateAddress(addressEntries ...sql.NullString) string {
 	nonEmptyAddressEntries := []string{}
 
@@ -118,42 +114,6 @@ func generateAddress(addressEntries ...sql.NullString) string {
 	return strings.Join(nonEmptyAddressEntries, ", ")
 }
 
-var AccountRankingToSize = map[int]string{
-	0: "no accounts available / dormant",
-	1: "micro",
-	2: "small",
-	3: "medium",
-	4: "large",
-	5: "very large",
-}
-
-/*
-Small, unaudited abridged, total exemption full and total exemption small – has a turnover of GBP 10.2m or less, GBP 5.1m or less on its balance sheet and has 50 employees or less (#809) – two or more must apply
-Microentity – has a  turnover of GBP 632k or less, GBP 316k or less on its balance sheet and has 10 employees or less (#733) – two or more must apply
-Dormant – not doing business and doesn’t have any other income (#147)
-Full – has a turnover of above GBP 10.2m or does not satisfy two or more of the criteria required to be a micro-entity or small company (#14)
-*/
-
-var CompanyAccountRanking = map[string]int{
-	"ACCOUNTS TYPE NOT AVAILABLE": 0,
-	"NO ACCOUNTS FILED":           0,
-	"DORMANT":                     0,
-	"MICRO ENTITY":                1,
-	"SMALL":                       2,
-	"TOTAL EXEMPTION SMALL":       2,
-	"TOTAL EXEMPTION FULL":        2,
-	"MEDIUM":                      3,
-	"FULL":                        4,
-	"GROUP":                       5,
-
-	"AUDITED ABRIDGED":            4,
-	"AUDIT EXEMPTION SUBSIDIARY":  2,
-	"FILING EXEMPTION SUBSIDIARY": 2,
-	"INITIAL":                     2,
-	"PARTIAL EXEMPTION":           2,
-	"UNAUDITED ABRIDGED":          2,
-}
-
 func getQueryTemplate(sample bool) string {
 	var template string
 
@@ -168,22 +128,23 @@ func getQueryTemplate(sample bool) string {
 
 const QUERY_TEMPLATE = `
 SELECT 
-	"CompanyName",
-	"CompanyNumber",
-	"RegAddress.AddressLine1",
-	"RegAddress.AddressLine2",
-	"RegAddress.PostTown",
-	"RegAddress.PostCode",
-	"IncorporationDate",
-	"Accounts.AccountCategory"
-FROM "ch_company_2023_05_01"
+	co."CompanyName",
+	co."CompanyNumber",
+	co."RegAddress.AddressLine1",
+	co."RegAddress.AddressLine2",
+	co."RegAddress.PostTown",
+	co."RegAddress.PostCode",
+	co."IncorporationDate",
+	acs."size"
+FROM "ch_company_2023_05_01" co
 %s
+JOIN "accounts_to_size" acs on co."Accounts.AccountCategory" = acs."accountcategory"
 WHERE
 	$1 IN (
-		"SICCode.SicText_1", "SICCode.SicText_2", "SICCode.SicText_3", "SICCode.SicText_4"
+		co."SICCode.SicText_1", co."SICCode.SicText_2", co."SICCode.SicText_3", co."SICCode.SicText_4"
 	)
-	AND "CompanyStatus" = 'Active'
-	AND "Accounts.AccountCategory" NOT IN ('DORMANT','NO ACCOUNTS FILED','ACCOUNTS TYPE NOT AVAILABLE')
+	AND co."CompanyStatus" = 'Active'
+	AND acs."accountcategory" != 'no accounts available / dormant'
 %s
 %s
 ;

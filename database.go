@@ -173,7 +173,7 @@ FROM "ch_company_2023_05_01" co
 %s
 JOIN "accounts_to_size" acs on co."Accounts.AccountCategory" = acs."accountcategory"
 WHERE
-	 IN (
+	$1 IN (
 		co."SICCode.SicText_1", co."SICCode.SicText_2", co."SICCode.SicText_3", co."SICCode.SicText_4"
 	)
 	AND co."CompanyStatus" = 'Active'

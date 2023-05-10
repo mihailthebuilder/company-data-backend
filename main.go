@@ -57,15 +57,23 @@ func createRouter(handler *RouteHandler) *gin.Engine {
 	serverRecoversFromAnyPanicAndWrites500(r)
 	allowAllOriginsForCORS(r)
 
-	r.POST("/register", handler.Register)
-
 	companies := r.Group("/companies", handler.CollectAndVerifyIndustryRequested)
 	{
 		companies.POST("/sample", handler.CompanySample)
+	}
 
-		authorised := companies.Group("/authorized", handler.VerifyAuthorization)
+	v2 := r.Group("/v2")
+	{
+		v2.POST("/register", handler.Register)
+
+		companies := v2.Group("/companies", handler.CollectAndVerifyIndustryRequested)
 		{
-			authorised.POST("/full", handler.CompanyFullList)
+			companies.POST("/sample", handler.CompanySampleV2)
+
+			authorised := companies.Group("/authorized", handler.VerifyAuthorization)
+			{
+				authorised.POST("/full", handler.CompanyFullList)
+			}
 		}
 	}
 

@@ -60,3 +60,24 @@ func (h *RouteHandler) CompanyFullList(c *gin.Context) {
 
 	c.JSON(http.StatusOK, companies)
 }
+
+func (h *RouteHandler) CompanySampleV2(c *gin.Context) {
+	industry := c.MustGet("Industry").(string)
+
+	companies, err := h.Database.GetListOfCompanies(&industry, true)
+	if err != nil {
+		log.Printf("Failed to get database sample for sic %s. Error: %s", industry, err)
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("returning %d companies for sic \"%s\"", len(companies), industry)
+
+	c.JSON(http.StatusOK, CompaniesRouteResponse{
+		Companies: companies,
+	})
+}
+
+type CompaniesRouteResponse struct {
+	Companies []ProcessedCompany `json:"companies"`
+}

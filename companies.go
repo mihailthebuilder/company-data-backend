@@ -66,19 +66,27 @@ func (h *RouteHandler) CompanySampleV2(c *gin.Context) {
 
 	companies, err := h.Database.GetListOfCompanies(&industry, true)
 	if err != nil {
-		log.Printf("Failed to get database sample for sic %s. Error: %s", industry, err)
+		log.Printf("Failed to get company sample for sic %s. Error: %s", industry, err)
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 
-	log.Printf("returning %d companies for sic \"%s\"", len(companies), industry)
+	psc, err := h.Database.GetListOfPersonsWithSignificantControl(&companies)
+	if err != nil {
+		log.Printf("Failed to get psc sample for sic %s. Error: %s", industry, err)
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("returning %d companies and %d PSCs for sic \"%s\"", len(companies), len(psc), industry)
 
 	c.JSON(http.StatusOK, CompaniesRouteResponse{
-		Companies: companies,
+		Companies:                     companies,
+		PersonsWithSignificantControl: psc,
 	})
 }
 
 type CompaniesRouteResponse struct {
-	Companies                     []ProcessedCompany              `json:"companies"`
-	PersonsWithSignificantControl []PersonsWithSignificantControl `json:"personsWithSignificantControl"`
+	Companies                     []ProcessedCompany             `json:"companies"`
+	PersonsWithSignificantControl []PersonWithSignificantControl `json:"personsWithSignificantControl"`
 }

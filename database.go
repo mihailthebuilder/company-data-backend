@@ -8,6 +8,7 @@ import (
 
 type IDatabase interface {
 	GetListOfCompanies(industry *string, isSample bool) ([]ProcessedCompany, error)
+	GetListOfPersonsWithSignificantControl(*[]ProcessedCompany) ([]PersonWithSignificantControl, error)
 }
 
 type Database struct {
@@ -85,7 +86,7 @@ type ProcessedCompany struct {
 	IncorporationDate string `json:"incorporationDate"`
 }
 
-type PersonsWithSignificantControl struct{}
+type PersonWithSignificantControl struct{}
 
 func (d *Database) getDatabaseConnection() (*sql.DB, error) {
 	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", d.Host, d.Port, d.User, d.Password, d.Name)
@@ -151,3 +152,7 @@ WHERE
 %s
 ;
 `
+
+func (d *Database) GetListOfPersonsWithSignificantControl(*[]ProcessedCompany) ([]PersonWithSignificantControl, error) {
+	return nil, nil
+}

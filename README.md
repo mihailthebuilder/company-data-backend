@@ -23,15 +23,15 @@ Test endpoints...
 
 - authenticate
 ```
-curl -X POST http://localhost:8080/register -d '{"EmailAddress":"hello@test.com", "ReasonForWantingData":"the new oil", "ProblemBeingSolved":"ruling the world"}'
+curl -X POST http://localhost:8080/v2/register -d '{"EmailAddress":"hello@test.com", "ReasonForWantingData":"the new oil", "ProblemBeingSolved":"ruling the world"}'
 ```
 
 - full
 ```
-curl -X POST http://localhost:8080/companies/authorized/full -H "Authorization: Bearer <enter_jwt_token>" -d '{"SicDescription":"Activities of mortgage finance companies"}'
+curl -X POST http://localhost:8080/v2/companies/authorized/full -H "Authorization: Bearer <enter_jwt_token>" -d '{"SicDescription":"Activities of mortgage finance companies"}'
 ```
 
 - sample
 ```
-curl -X POST http://localhost:8080/companies/sample -d '{"SicDescription":"Activities of mortgage finance companies"}'
+curl -X POST http://localhost:8080/v2/companies/sample -d '{"SicDescription":"Activities of mortgage finance companies"}'
 ```

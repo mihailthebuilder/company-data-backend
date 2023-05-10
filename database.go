@@ -7,7 +7,7 @@ import (
 )
 
 type IDatabase interface {
-	GetListOfCompanies(industry *string, isSample bool) (*[]ProcessedCompany, error)
+	GetListOfCompanies(industry *string, isSample bool) ([]ProcessedCompany, error)
 }
 
 type Database struct {
@@ -18,7 +18,7 @@ type Database struct {
 	Name     string
 }
 
-func (d *Database) GetListOfCompanies(industry *string, isSample bool) (*[]ProcessedCompany, error) {
+func (d *Database) GetListOfCompanies(industry *string, isSample bool) ([]ProcessedCompany, error) {
 	conn, err := d.getDatabaseConnection()
 	if err != nil {
 		return nil, fmt.Errorf("error fetching database connection: %s", err)
@@ -30,7 +30,7 @@ func (d *Database) GetListOfCompanies(industry *string, isSample bool) (*[]Proce
 
 	template := getQueryTemplate(isSample)
 
-	rows, err := conn.Query(*template, *industry)
+	rows, err := conn.Query(template, *industry)
 	if err != nil {
 		return nil, fmt.Errorf("query error: %s", err)
 	}
@@ -63,7 +63,7 @@ func (d *Database) GetListOfCompanies(industry *string, isSample bool) (*[]Proce
 		companies = append(companies, processedCompany)
 	}
 
-	return &companies, nil
+	return companies, nil
 }
 
 type CompanyRow struct {
@@ -154,7 +154,7 @@ var CompanyAccountRanking = map[string]int{
 	"UNAUDITED ABRIDGED":          2,
 }
 
-func getQueryTemplate(sample bool) *string {
+func getQueryTemplate(sample bool) string {
 	var template string
 
 	if sample {
@@ -163,7 +163,7 @@ func getQueryTemplate(sample bool) *string {
 		template = fmt.Sprintf(QUERY_TEMPLATE, "", "", "")
 	}
 
-	return &template
+	return template
 }
 
 const QUERY_TEMPLATE = `

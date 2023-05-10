@@ -22,7 +22,7 @@ func (h *RouteHandler) CollectAndVerifyIndustryRequested(c *gin.Context) {
 		return
 	}
 
-	c.Set("Industry", &body.SicDescription)
+	c.Set("Industry", body.SicDescription)
 
 	c.Next()
 }
@@ -32,31 +32,31 @@ type SampleRequestBody struct {
 }
 
 func (h *RouteHandler) CompanySample(c *gin.Context) {
-	industry := c.MustGet("Industry").(*string)
+	industry := c.MustGet("Industry").(string)
 
-	companies, err := h.Database.GetListOfCompanies(industry, true)
+	companies, err := h.Database.GetListOfCompanies(&industry, true)
 	if err != nil {
-		log.Printf("Failed to get database sample for sic %s. Error: %s", *industry, err)
+		log.Printf("Failed to get database sample for sic %s. Error: %s", industry, err)
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 
-	log.Printf("returning %d companies for sic \"%s\"", len(*companies), *industry)
+	log.Printf("returning %d companies for sic \"%s\"", len(companies), industry)
 
 	c.JSON(http.StatusOK, companies)
 }
 
 func (h *RouteHandler) CompanyFullList(c *gin.Context) {
-	industry := c.MustGet("Industry").(*string)
+	industry := c.MustGet("Industry").(string)
 
-	companies, err := h.Database.GetListOfCompanies(industry, false)
+	companies, err := h.Database.GetListOfCompanies(&industry, false)
 	if err != nil {
-		log.Printf("Failed to get full list for sic %s. Error: %s", *industry, err)
+		log.Printf("Failed to get full list for sic %s. Error: %s", industry, err)
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 
-	log.Printf("returning %d companies for sic \"%s\"", len(*companies), *industry)
+	log.Printf("returning %d companies for sic \"%s\"", len(companies), industry)
 
 	c.JSON(http.StatusOK, companies)
 }

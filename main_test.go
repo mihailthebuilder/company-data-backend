@@ -112,7 +112,7 @@ func TestSampleRoute_ShouldReturnData(t *testing.T) {
 	d := MockDatabase{}
 
 	industry := "Extraction of salt"
-	d.On("GetListOfCompanies", &industry, true).Return(&[]ProcessedCompany{{}}, nil)
+	d.On("GetListOfCompanies", &industry, true).Return([]ProcessedCompany{{}}, nil)
 
 	handler := RouteHandler{
 		Database: d,
@@ -131,9 +131,9 @@ type MockDatabase struct {
 	mock.Mock
 }
 
-func (e MockDatabase) GetListOfCompanies(i *string, s bool) (*[]ProcessedCompany, error) {
+func (e MockDatabase) GetListOfCompanies(i *string, s bool) ([]ProcessedCompany, error) {
 	args := e.Called(i, s)
-	return args.Get(0).(*[]ProcessedCompany), args.Error(1)
+	return args.Get(0).([]ProcessedCompany), args.Error(1)
 }
 
 func TestFullRoute_ShouldReturnUnauthorizedWhenNoJwtToken(t *testing.T) {
@@ -150,7 +150,7 @@ func TestFullRoute_ShouldReturnUnauthorizedWhenNoJwtToken(t *testing.T) {
 func TestAuthorizationRouteToFullRouteFlow_HappyPath(t *testing.T) {
 	d := MockDatabase{}
 	industry := "Extraction of salt"
-	d.On("GetListOfCompanies", &industry, false).Return(&[]ProcessedCompany{{}}, nil)
+	d.On("GetListOfCompanies", &industry, false).Return([]ProcessedCompany{{}}, nil)
 
 	registrationRequest := RegistrationRequestBody{
 		EmailAddress:         "hello@world.com",

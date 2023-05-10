@@ -4,3 +4,6 @@ test:
 
 test-detail:
 	go test
+
+run:
+	go run .

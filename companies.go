@@ -79,5 +79,6 @@ func (h *RouteHandler) CompanySampleV2(c *gin.Context) {
 }
 
 type CompaniesRouteResponse struct {
-	Companies []ProcessedCompany `json:"companies"`
+	Companies                     []ProcessedCompany              `json:"companies"`
+	PersonsWithSignificantControl []PersonsWithSignificantControl `json:"personsWithSignificantControl"`
 }

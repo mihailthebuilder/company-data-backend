@@ -85,6 +85,8 @@ type ProcessedCompany struct {
 	IncorporationDate string `json:"incorporationDate"`
 }
 
+type PersonsWithSignificantControl struct{}
+
 func (d *Database) getDatabaseConnection() (*sql.DB, error) {
 	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", d.Host, d.Port, d.User, d.Password, d.Name)
 

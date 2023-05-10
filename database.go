@@ -144,7 +144,7 @@ WHERE
 		co."SICCode.SicText_1", co."SICCode.SicText_2", co."SICCode.SicText_3", co."SICCode.SicText_4"
 	)
 	AND co."CompanyStatus" = 'Active'
-	AND acs."accountcategory" != 'no accounts available / dormant'
+	AND acs."size" <> 'no accounts available / dormant'
 %s
 %s
 ;

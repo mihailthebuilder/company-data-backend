@@ -48,17 +48,29 @@ func (d *Database) GetListOfCompanies(industry *string, isSample bool) ([]Proces
 			&companyRow.PostCode,
 			&companyRow.IncorporationDate,
 			&companyRow.Size,
+			&companyRow.MortgageCharges,
+			&companyRow.MortgagesOutstanding,
+			&companyRow.MortgagesPartSatisfied,
+			&companyRow.MortgagesSatisfied,
+			&companyRow.LastAccountsDate,
+			&companyRow.NextAccountsDate,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("error scanning db row: %s", err)
 		}
 
 		processedCompany := ProcessedCompany{
-			Name:              companyRow.CompanyName,
-			CompaniesHouseUrl: fmt.Sprintf("https://find-and-update.company-information.service.gov.uk/company/%s", companyRow.CompanyNumber),
-			Address:           generateAddress(companyRow.AddressLine1, companyRow.AddressLine2, companyRow.PostTown, companyRow.PostCode),
-			IncorporationDate: companyRow.IncorporationDate,
-			Size:              companyRow.Size,
+			Name:                   companyRow.CompanyName,
+			CompaniesHouseUrl:      fmt.Sprintf("https://find-and-update.company-information.service.gov.uk/company/%s", companyRow.CompanyNumber),
+			Address:                generateAddress(companyRow.AddressLine1, companyRow.AddressLine2, companyRow.PostTown, companyRow.PostCode),
+			IncorporationDate:      companyRow.IncorporationDate,
+			Size:                   companyRow.Size,
+			MortgageCharges:        companyRow.MortgageCharges,
+			MortgagesOutstanding:   companyRow.MortgagesOutstanding,
+			MortgagesPartSatisfied: companyRow.MortgagesPartSatisfied,
+			MortgagesSatisfied:     companyRow.MortgagesSatisfied,
+			LastAccountsDate:       companyRow.LastAccountsDate,
+			NextAccountsDate:       companyRow.NextAccountsDate,
 		}
 
 		companies = append(companies, processedCompany)
@@ -68,22 +80,34 @@ func (d *Database) GetListOfCompanies(industry *string, isSample bool) ([]Proces
 }
 
 type CompanyRow struct {
-	CompanyName       string
-	CompanyNumber     string
-	AddressLine1      sql.NullString
-	AddressLine2      sql.NullString
-	PostTown          sql.NullString
-	PostCode          sql.NullString
-	Size              string
-	IncorporationDate string
+	CompanyName            string
+	CompanyNumber          string
+	AddressLine1           sql.NullString
+	AddressLine2           sql.NullString
+	PostTown               sql.NullString
+	PostCode               sql.NullString
+	Size                   string
+	IncorporationDate      string
+	MortgageCharges        int
+	MortgagesOutstanding   int
+	MortgagesPartSatisfied int
+	MortgagesSatisfied     int
+	LastAccountsDate       string
+	NextAccountsDate       string
 }
 
 type ProcessedCompany struct {
-	Name              string `json:"name"`
-	CompaniesHouseUrl string `json:"companiesHouseUrl"`
-	Address           string `json:"address"`
-	Size              string `json:"size"`
-	IncorporationDate string `json:"incorporationDate"`
+	Name                   string `json:"name"`
+	CompaniesHouseUrl      string `json:"companiesHouseUrl"`
+	Address                string `json:"address"`
+	Size                   string `json:"size"`
+	IncorporationDate      string `json:"incorporationDate"`
+	MortgageCharges        int    `json:"mortgageCharges"`
+	MortgagesOutstanding   int    `json:"mortgagesOutstanding"`
+	MortgagesPartSatisfied int    `json:"mortgagesPartSatisfied"`
+	MortgagesSatisfied     int    `json:"mortgagesSatisfied"`
+	LastAccountsDate       string `json:"lastAccountsDate"`
+	NextAccountsDate       string `json:"nextAccountsDate"`
 }
 
 type PersonWithSignificantControl struct{}
@@ -138,12 +162,18 @@ SELECT
 	co."RegAddress.PostTown",
 	co."RegAddress.PostCode",
 	co."IncorporationDate",
-	acs."size"
+	acs."size",
+	co."Mortgages.NumMortCharges",
+	co."Mortgages.NumMortOutstanding",
+	co."Mortgages.NumMortPartSatisfied",
+	co."Mortgages.NumMortSatisfied",
+	co."Accounts.LastMadeUpDate",
+	co."Accounts.NextDueDate"
 FROM "ch_company_2023_05_01" co
 %s
 JOIN "accounts_to_size" acs on co."Accounts.AccountCategory" = acs."accountcategory"
 WHERE
-	$1 IN (
+	 IN (
 		co."SICCode.SicText_1", co."SICCode.SicText_2", co."SICCode.SicText_3", co."SICCode.SicText_4"
 	)
 	AND co."CompanyStatus" = 'Active'

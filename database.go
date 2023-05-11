@@ -186,3 +186,39 @@ WHERE
 func (d *Database) GetListOfPersonsWithSignificantControl(*[]ProcessedCompany) ([]PersonWithSignificantControl, error) {
 	return nil, nil
 }
+
+`
+SELECT 
+	co."CompanyName",
+	co."CompanyNumber",
+	co."RegAddress.AddressLine1",
+	co."RegAddress.AddressLine2",
+	co."RegAddress.PostTown",
+	co."RegAddress.PostCode",
+	co."IncorporationDate",
+	acs."size",
+	co."Mortgages.NumMortCharges",
+	co."Mortgages.NumMortOutstanding",
+	co."Mortgages.NumMortPartSatisfied",
+	co."Mortgages.NumMortSatisfied",
+	co."Accounts.LastMadeUpDate",
+	co."Accounts.NextDueDate"
+INTO TEMP TABLE cdr
+FROM "ch_company_2023_05_01" co
+TABLESAMPLE SYSTEM (10)
+JOIN "accounts_to_size" acs on co."Accounts.AccountCategory" = acs."accountcategory"
+WHERE
+	'Accounting and auditing activities' IN (
+		co."SICCode.SicText_1", co."SICCode.SicText_2", co."SICCode.SicText_3", co."SICCode.SicText_4"
+	)
+	AND co."CompanyStatus" = 'Active'
+	AND acs."size" <> 'no accounts available / dormant'
+ORDER BY RANDOM()
+LIMIT 10;
+
+SELECT * FROM cdr;
+
+SELECT *
+FROM "ch_psc_2023_05_03" psc
+JOIN cdr on psc."company_number" = cdr."CompanyNumber";
+`

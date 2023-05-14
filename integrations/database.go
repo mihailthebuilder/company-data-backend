@@ -2,12 +2,14 @@ package integrations
 
 import (
 	"company-data-backend/routes"
+	"context"
+	"strconv"
 
 	"database/sql"
 	"fmt"
 	"strings"
 
-	_ "github.com/lib/pq"
+	"github.com/jackc/pgx/v5"
 )
 
 /*
@@ -31,53 +33,16 @@ func (d *Database) GetCompaniesAndOwnershipForIndustry(industry *string, isSampl
 		return results, fmt.Errorf("error fetching database connection: %s", err)
 	}
 
-	defer conn.Close()
+	defer conn.Close(context.Background())
 
-	template := getQueryTemplate(isSample)
-
-	rows, err := conn.Query(template, *industry)
+	err = createCompanyListTemporaryTable(conn, industry, isSample)
 	if err != nil {
-		return results, fmt.Errorf("query error: %s", err)
+		return results, fmt.Errorf("create company list temp table error: %s", err)
 	}
 
-	for rows.Next() {
-		var companyRow CompanyRow
-
-		err = rows.Scan(
-			&companyRow.CompanyName,
-			&companyRow.CompanyNumber,
-			&companyRow.AddressLine1,
-			&companyRow.AddressLine2,
-			&companyRow.PostTown,
-			&companyRow.PostCode,
-			&companyRow.IncorporationDate,
-			&companyRow.Size,
-			&companyRow.MortgageCharges,
-			&companyRow.MortgagesOutstanding,
-			&companyRow.MortgagesPartSatisfied,
-			&companyRow.MortgagesSatisfied,
-			&companyRow.LastAccountsDate,
-			&companyRow.NextAccountsDate,
-		)
-		if err != nil {
-			return results, fmt.Errorf("error scanning db row: %s", err)
-		}
-
-		processedCompany := routes.Company{
-			Name:                   companyRow.CompanyName,
-			CompaniesHouseUrl:      fmt.Sprintf("https://find-and-update.company-information.service.gov.uk/company/%s", companyRow.CompanyNumber),
-			Address:                generateAddress(companyRow.AddressLine1, companyRow.AddressLine2, companyRow.PostTown, companyRow.PostCode),
-			IncorporationDate:      companyRow.IncorporationDate,
-			Size:                   companyRow.Size,
-			MortgageCharges:        companyRow.MortgageCharges,
-			MortgagesOutstanding:   companyRow.MortgagesOutstanding,
-			MortgagesPartSatisfied: companyRow.MortgagesPartSatisfied,
-			MortgagesSatisfied:     companyRow.MortgagesSatisfied,
-			LastAccountsDate:       companyRow.LastAccountsDate,
-			NextAccountsDate:       companyRow.NextAccountsDate,
-		}
-
-		results.Companies = append(results.Companies, processedCompany)
+	err = addCompanyDataToResults(conn, &results)
+	if err != nil {
+		return results, fmt.Errorf("get companies error: %s", err)
 	}
 
 	return results, nil
@@ -90,20 +55,20 @@ type CompanyRow struct {
 	AddressLine2           sql.NullString
 	PostTown               sql.NullString
 	PostCode               sql.NullString
-	Size                   string
 	IncorporationDate      string
-	MortgageCharges        int
-	MortgagesOutstanding   int
-	MortgagesPartSatisfied int
-	MortgagesSatisfied     int
+	Size                   string
+	MortgageCharges        string
+	MortgagesOutstanding   string
+	MortgagesPartSatisfied string
+	MortgagesSatisfied     string
 	LastAccountsDate       string
 	NextAccountsDate       string
 }
 
-func (d *Database) getDatabaseConnection() (*sql.DB, error) {
+func (d *Database) getDatabaseConnection() (*pgx.Conn, error) {
 	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", d.Host, d.Port, d.User, d.Password, d.Name)
 
-	db, err := sql.Open("postgres", connStr)
+	db, err := pgx.Connect(context.Background(), connStr)
 	if err != nil {
 		return nil, fmt.Errorf("error opening database connection: %s", err)
 	}
@@ -129,19 +94,19 @@ func generateAddress(addressEntries ...sql.NullString) string {
 	return strings.Join(nonEmptyAddressEntries, ", ")
 }
 
-func getQueryTemplate(sample bool) string {
+func getCompanyListQuery(sample bool) string {
 	var template string
 
 	if sample {
-		template = fmt.Sprintf(QUERY_TEMPLATE, "TABLESAMPLE SYSTEM (10)", "ORDER BY RANDOM()", "LIMIT 10")
+		template = fmt.Sprintf(createFilteredCompanyListTableQuery, "TABLESAMPLE SYSTEM (10)", "ORDER BY RANDOM()", "LIMIT 10")
 	} else {
-		template = fmt.Sprintf(QUERY_TEMPLATE, "", "", "")
+		template = fmt.Sprintf(createFilteredCompanyListTableQuery, "", "", "")
 	}
 
 	return template
 }
 
-const QUERY_TEMPLATE = `
+const createFilteredCompanyListTableQuery = `
 select 
 	co."CompanyName",
 	co."CompanyNumber",
@@ -165,37 +130,116 @@ from
 join "accounts_to_size" acs on
 	co."Accounts.AccountCategory" = acs."accountcategory"
 where
-	'Accounting and auditing activities' in (
+	$1 in (
 		co."SICCode.SicText_1", co."SICCode.SicText_2", co."SICCode.SicText_3", co."SICCode.SicText_4"
 	)
 	and co."CompanyStatus" = 'Active'
 	and acs."size" <> 'no accounts available / dormant'
 %s
 %s;
-
-SELECT * FROM cdr;
-
-select
-	psc.company_number,
-	psc."data.address.premises" ,
-	psc."data.address.address_line_1" ,
-	psc."data.address.address_line_2" ,
-	psc."data.address.locality" ,
-	psc."data.address.postal_code",
-	psc."data.country_of_residence" ,
-	psc."data.date_of_birth.month" ,
-	psc."data.date_of_birth.year",
-	psc."data.kind" ,
-	psc."data.name" ,
-	psc."data.nationality" ,
-	psc."data.natures_of_control.0" ,
-	psc."data.notified_on"
-from
-	"ch_psc_2023_05_03" psc
-join cdr on
-	psc."company_number" = cdr."CompanyNumber"
-where
-	psc."data.ceased" is null
-	and psc."data.ceased_on" is null
-;
 `
+
+const getCompanyDataQuery = `SELECT * FROM cdr;`
+
+// select
+// 	psc.company_number,
+// 	psc."data.address.premises" ,
+// 	psc."data.address.address_line_1" ,
+// 	psc."data.address.address_line_2" ,
+// 	psc."data.address.locality" ,
+// 	psc."data.address.postal_code",
+// 	psc."data.country_of_residence" ,
+// 	psc."data.date_of_birth.month" ,
+// 	psc."data.date_of_birth.year",
+// 	psc."data.kind" ,
+// 	psc."data.name" ,
+// 	psc."data.nationality" ,
+// 	psc."data.natures_of_control.0" ,
+// 	psc."data.notified_on"
+// from
+// 	"ch_psc_2023_05_03" psc
+// join cdr on
+// 	psc."company_number" = cdr."CompanyNumber"
+// where
+// 	psc."data.ceased" is null
+// 	and psc."data.ceased_on" is null
+// ;
+// `
+
+func createCompanyListTemporaryTable(conn *pgx.Conn, industry *string, isSample bool) error {
+	template := getCompanyListQuery(isSample)
+
+	_, err := conn.Exec(context.Background(), template, *industry)
+
+	return err
+}
+
+func addCompanyDataToResults(conn *pgx.Conn, results *routes.CompaniesAndOwnershipQueryResults) error {
+
+	rows, err := conn.Query(context.Background(), getCompanyDataQuery)
+	if err != nil {
+		return fmt.Errorf("get companies error: %s", err)
+	}
+
+	for rows.Next() {
+		var companyRow CompanyRow
+
+		err = rows.Scan(
+			&companyRow.CompanyName,
+			&companyRow.CompanyNumber,
+			&companyRow.AddressLine1,
+			&companyRow.AddressLine2,
+			&companyRow.PostTown,
+			&companyRow.PostCode,
+			&companyRow.IncorporationDate,
+			&companyRow.Size,
+			&companyRow.MortgageCharges,
+			&companyRow.MortgagesOutstanding,
+			&companyRow.MortgagesPartSatisfied,
+			&companyRow.MortgagesSatisfied,
+			&companyRow.LastAccountsDate,
+			&companyRow.NextAccountsDate,
+		)
+		if err != nil {
+			return fmt.Errorf("error scanning db row: %s", err)
+		}
+
+		mortgageCharges, err := strconv.Atoi(companyRow.MortgageCharges)
+		if err != nil {
+			return fmt.Errorf("unable to convert mortgage charges column value to int: %s", err)
+		}
+
+		mortgagesOutstanding, err := strconv.Atoi(companyRow.MortgagesOutstanding)
+		if err != nil {
+			return fmt.Errorf("unable to convert mortgage charges column value to int: %s", err)
+		}
+
+		mortgagesPartSatisfied, err := strconv.Atoi(companyRow.MortgagesPartSatisfied)
+		if err != nil {
+			return fmt.Errorf("unable to convert mortgage charges column value to int: %s", err)
+		}
+
+		mortgagesSatisfied, err := strconv.Atoi(companyRow.MortgagesSatisfied)
+		if err != nil {
+			return fmt.Errorf("unable to convert mortgage charges column value to int: %s", err)
+		}
+
+		processedCompany := routes.Company{
+			Name:                   companyRow.CompanyName,
+			CompaniesHouseUrl:      fmt.Sprintf("https://find-and-update.company-information.service.gov.uk/company/%s", companyRow.CompanyNumber),
+			Address:                generateAddress(companyRow.AddressLine1, companyRow.AddressLine2, companyRow.PostTown, companyRow.PostCode),
+			IncorporationDate:      companyRow.IncorporationDate,
+			Size:                   companyRow.Size,
+			MortgageCharges:        mortgageCharges,
+			MortgagesOutstanding:   mortgagesOutstanding,
+			MortgagesPartSatisfied: mortgagesPartSatisfied,
+			MortgagesSatisfied:     mortgagesSatisfied,
+			LastAccountsDate:       companyRow.LastAccountsDate,
+			NextAccountsDate:       companyRow.NextAccountsDate,
+		}
+
+		results.Companies = append(results.Companies, processedCompany)
+	}
+
+	return nil
+}

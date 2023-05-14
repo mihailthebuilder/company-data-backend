@@ -4,6 +4,7 @@ import (
 	"company-data-backend/routes"
 	"context"
 	"strconv"
+	"time"
 
 	"database/sql"
 	"fmt"
@@ -11,11 +12,6 @@ import (
 
 	"github.com/jackc/pgx/v5"
 )
-
-/*
-use new library
-do the multiple query thing
-*/
 
 type Database struct {
 	Host     string
@@ -146,7 +142,7 @@ func addCompanyDataToResults(conn *pgx.Conn, results *routes.CompaniesAndOwnersh
 
 		companyRow, err := pgx.RowToStructByPos[CompanyRow](rows)
 		if err != nil {
-			return fmt.Errorf("error scanning db row: %s", err)
+			return fmt.Errorf("error scanning company row: %s", err)
 		}
 
 		mortgageCharges, err := strconv.Atoi(companyRow.MortgageCharges)
@@ -171,6 +167,7 @@ func addCompanyDataToResults(conn *pgx.Conn, results *routes.CompaniesAndOwnersh
 
 		processedCompany := routes.Company{
 			Name:                   companyRow.CompanyName,
+			Number:                 companyRow.CompanyNumber,
 			CompaniesHouseUrl:      fmt.Sprintf("https://find-and-update.company-information.service.gov.uk/company/%s", companyRow.CompanyNumber),
 			Address:                generateAddress(companyRow.AddressLine1, companyRow.AddressLine2, companyRow.PostTown, companyRow.PostCode),
 			IncorporationDate:      companyRow.IncorporationDate,
@@ -239,8 +236,77 @@ where
 	}
 
 	for rows.Next() {
-		continue
+		row, err := pgx.RowToStructByPos[PSCRow](rows)
+		if err != nil {
+			return fmt.Errorf("error scanning PSC row: %s", err)
+		}
+
+		psc := routes.PSC{
+			CompanyNumber: row.CompanyNumber,
+			Name:          row.Name.String,
+			Address:       generateAddress(row.Locality, row.AddressLine1, row.AddressLine2, row.Postcode, row.Country),
+			Nationality:   row.Nationality.String,
+		}
+
+		err = addAgeIfPossible(&psc, row)
+		if err != nil {
+			return fmt.Errorf("error getting age for PSC row: %s", err)
+		}
+
+		results.PSCs = append(results.PSCs, psc)
 	}
+
+	return nil
+}
+
+type PSCRow struct {
+	CompanyNumber string
+	Premises      sql.NullString
+	AddressLine1  sql.NullString
+	AddressLine2  sql.NullString
+	Locality      sql.NullString
+	Postcode      sql.NullString
+	Country       sql.NullString
+	BirthMonth    sql.NullString
+	BirthYear     sql.NullString
+	PersonType    sql.NullString
+	Name          sql.NullString
+	Nationality   sql.NullString
+	ControlType   sql.NullString
+	NotifiedOn    string
+}
+
+func addAgeIfPossible(psc *routes.PSC, row PSCRow) error {
+	if row.BirthMonth.Valid && row.BirthYear.Valid {
+		return nil
+	}
+
+	sMonth := row.BirthMonth.String
+	sYear := row.BirthYear.String
+
+	if len(sMonth) == 0 || len(sYear) == 0 {
+		return nil
+	}
+
+	birthMonth, err := strconv.Atoi(row.BirthMonth.String)
+	if err != nil {
+		return fmt.Errorf("can't parse month: %s", err)
+	}
+
+	birthYear, err := strconv.Atoi(row.BirthYear.String)
+	if err != nil {
+		return fmt.Errorf("can't parse year: %s", err)
+	}
+
+	currentYear := time.Now().Year()
+	currentMonth := int(time.Now().Month())
+
+	age := currentYear - birthYear
+	if currentMonth < birthMonth {
+		age--
+	}
+
+	psc.Age = age
 
 	return nil
 }

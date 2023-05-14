@@ -27,6 +27,7 @@ type CompaniesAndOwnershipQueryResults struct {
 
 type Company struct {
 	Name                   string `json:"name"`
+	Number                 string `json:"number"`
 	CompaniesHouseUrl      string `json:"companiesHouseUrl"`
 	Address                string `json:"address"`
 	Size                   string `json:"size"`
@@ -39,4 +40,10 @@ type Company struct {
 	NextAccountsDate       string `json:"nextAccountsDate"`
 }
 
-type PSC struct{}
+type PSC struct {
+	CompanyNumber string `json:"companyNumber"`
+	Name          string `json:"name"`
+	Address       string `json:"address"`
+	Age           int    `json:"age"`
+	Nationality   string `json:"nationality"`
+}

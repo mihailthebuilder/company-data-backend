@@ -1,13 +1,9 @@
-package main
+package integrations
 
 import (
 	"io"
 	"net/http"
 )
-
-type IEmailAPI interface {
-	SendRequest(body io.Reader) (*http.Response, error)
-}
 
 type EmailAPI struct {
 	URL string

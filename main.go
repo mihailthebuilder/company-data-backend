@@ -1,6 +1,8 @@
 package main
 
 import (
+	"company-data-backend/integrations"
+	"company-data-backend/routes"
 	"log"
 	"os"
 
@@ -15,11 +17,11 @@ func main() {
 		loadEnvironmentVariablesFromDotEnvFile()
 	}
 
-	c := &RouteHandler{
-		EmailAPI:                  &EmailAPI{URL: getEnv("EMAIL_API_URL")},
+	c := &routes.RouteHandler{
+		EmailAPI:                  &integrations.EmailAPI{URL: getEnv("EMAIL_API_URL")},
 		JwtTokenLifespanInMinutes: getEnv("TOKEN_MINUTE_LIFESPAN"),
 		ApiSecret:                 getEnv("API_SECRET"),
-		Database: &Database{
+		Database: &integrations.Database{
 			Host:     getEnv("DB_HOST"),
 			Port:     getEnv("DB_PORT"),
 			User:     getEnv("DB_USER"),
@@ -33,13 +35,6 @@ func main() {
 	r.Run()
 }
 
-type RouteHandler struct {
-	EmailAPI                  IEmailAPI
-	JwtTokenLifespanInMinutes string
-	ApiSecret                 string
-	Database                  IDatabase
-}
-
 func isRunningLocally() bool {
 	return os.Getenv("GIN_MODE") == ""
 }
@@ -51,13 +46,13 @@ func loadEnvironmentVariablesFromDotEnvFile() {
 	}
 }
 
-func createRouter(handler *RouteHandler) *gin.Engine {
-	r := gin.Default()
+func createRouter(handler *routes.RouteHandler) *gin.Engine {
+	engine := gin.Default()
 
-	serverRecoversFromAnyPanicAndWrites500(r)
-	allowAllOriginsForCORS(r)
+	serverRecoversFromAnyPanicAndWrites500(engine)
+	allowAllOriginsForCORS(engine)
 
-	v2 := r.Group("/v2")
+	v2 := engine.Group("/v2")
 	{
 		v2.POST("/register", handler.Register)
 
@@ -72,7 +67,7 @@ func createRouter(handler *RouteHandler) *gin.Engine {
 		}
 	}
 
-	return r
+	return engine
 }
 
 func serverRecoversFromAnyPanicAndWrites500(engine *gin.Engine) {

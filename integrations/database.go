@@ -1,15 +1,10 @@
-package main
+package integrations
 
 import (
 	"database/sql"
 	"fmt"
 	"strings"
 )
-
-type IDatabase interface {
-	GetListOfCompanies(industry *string, isSample bool) ([]ProcessedCompany, error)
-	GetListOfPersonsWithSignificantControl(*[]ProcessedCompany) ([]PersonWithSignificantControl, error)
-}
 
 type Database struct {
 	Host     string
@@ -154,7 +149,7 @@ func getQueryTemplate(sample bool) string {
 }
 
 const QUERY_TEMPLATE = `
-SELECT 
+select 
 	co."CompanyName",
 	co."CompanyNumber",
 	co."RegAddress.AddressLine1",
@@ -169,20 +164,45 @@ SELECT
 	co."Mortgages.NumMortSatisfied",
 	co."Accounts.LastMadeUpDate",
 	co."Accounts.NextDueDate"
-FROM "ch_company_2023_05_01" co
+into
+	temp table cdr
+from
+	"ch_company_2023_05_01" co
 %s
-JOIN "accounts_to_size" acs on co."Accounts.AccountCategory" = acs."accountcategory"
-WHERE
-	$1 IN (
+join "accounts_to_size" acs on
+	co."Accounts.AccountCategory" = acs."accountcategory"
+where
+	'Accounting and auditing activities' in (
 		co."SICCode.SicText_1", co."SICCode.SicText_2", co."SICCode.SicText_3", co."SICCode.SicText_4"
 	)
-	AND co."CompanyStatus" = 'Active'
-	AND acs."size" <> 'no accounts available / dormant'
+	and co."CompanyStatus" = 'Active'
+	and acs."size" <> 'no accounts available / dormant'
 %s
-%s
+%s;
+
+SELECT * FROM cdr;
+
+select
+	psc.company_number,
+	psc."data.address.premises" ,
+	psc."data.address.address_line_1" ,
+	psc."data.address.address_line_2" ,
+	psc."data.address.locality" ,
+	psc."data.address.postal_code",
+	psc."data.country_of_residence" ,
+	psc."data.date_of_birth.month" ,
+	psc."data.date_of_birth.year",
+	psc."data.kind" ,
+	psc."data.name" ,
+	psc."data.nationality" ,
+	psc."data.natures_of_control.0" ,
+	psc."data.notified_on"
+from
+	"ch_psc_2023_05_03" psc
+join cdr on
+	psc."company_number" = cdr."CompanyNumber"
+where
+	psc."data.ceased" is null
+	and psc."data.ceased_on" is null
 ;
 `
-
-func (d *Database) GetListOfPersonsWithSignificantControl(*[]ProcessedCompany) ([]PersonWithSignificantControl, error) {
-	return nil, nil
-}

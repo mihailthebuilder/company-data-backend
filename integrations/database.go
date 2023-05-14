@@ -45,6 +45,11 @@ func (d *Database) GetCompaniesAndOwnershipForIndustry(industry *string, isSampl
 		return results, fmt.Errorf("get companies error: %s", err)
 	}
 
+	err = addPSCDataToResults(conn, &results)
+	if err != nil {
+		return results, fmt.Errorf("get PSC error: %s", err)
+	}
+
 	return results, nil
 }
 
@@ -97,16 +102,7 @@ func generateAddress(addressEntries ...sql.NullString) string {
 func getCompanyListQuery(sample bool) string {
 	var template string
 
-	if sample {
-		template = fmt.Sprintf(createFilteredCompanyListTableQuery, "TABLESAMPLE SYSTEM (10)", "ORDER BY RANDOM()", "LIMIT 10")
-	} else {
-		template = fmt.Sprintf(createFilteredCompanyListTableQuery, "", "", "")
-	}
-
-	return template
-}
-
-const createFilteredCompanyListTableQuery = `
+	const createFilteredCompanyListTableQuery = `
 select 
 	co."CompanyName",
 	co."CompanyNumber",
@@ -139,32 +135,14 @@ where
 %s;
 `
 
-const getCompanyDataQuery = `SELECT * FROM cdr;`
+	if sample {
+		template = fmt.Sprintf(createFilteredCompanyListTableQuery, "TABLESAMPLE SYSTEM (10)", "ORDER BY RANDOM()", "LIMIT 10")
+	} else {
+		template = fmt.Sprintf(createFilteredCompanyListTableQuery, "", "", "")
+	}
 
-// select
-// 	psc.company_number,
-// 	psc."data.address.premises" ,
-// 	psc."data.address.address_line_1" ,
-// 	psc."data.address.address_line_2" ,
-// 	psc."data.address.locality" ,
-// 	psc."data.address.postal_code",
-// 	psc."data.country_of_residence" ,
-// 	psc."data.date_of_birth.month" ,
-// 	psc."data.date_of_birth.year",
-// 	psc."data.kind" ,
-// 	psc."data.name" ,
-// 	psc."data.nationality" ,
-// 	psc."data.natures_of_control.0" ,
-// 	psc."data.notified_on"
-// from
-// 	"ch_psc_2023_05_03" psc
-// join cdr on
-// 	psc."company_number" = cdr."CompanyNumber"
-// where
-// 	psc."data.ceased" is null
-// 	and psc."data.ceased_on" is null
-// ;
-// `
+	return template
+}
 
 func createCompanyListTemporaryTable(conn *pgx.Conn, industry *string, isSample bool) error {
 	template := getCompanyListQuery(isSample)
@@ -176,7 +154,7 @@ func createCompanyListTemporaryTable(conn *pgx.Conn, industry *string, isSample 
 
 func addCompanyDataToResults(conn *pgx.Conn, results *routes.CompaniesAndOwnershipQueryResults) error {
 
-	rows, err := conn.Query(context.Background(), getCompanyDataQuery)
+	rows, err := conn.Query(context.Background(), `SELECT * FROM cdr;`)
 	if err != nil {
 		return fmt.Errorf("get companies error: %s", err)
 	}
@@ -239,6 +217,41 @@ func addCompanyDataToResults(conn *pgx.Conn, results *routes.CompaniesAndOwnersh
 		}
 
 		results.Companies = append(results.Companies, processedCompany)
+	}
+
+	return nil
+}
+
+func addPSCDataToResults(conn *pgx.Conn, results *routes.CompaniesAndOwnershipQueryResults) error {
+	query := `
+select
+	psc.company_number,
+	psc."data.address.premises" ,
+	psc."data.address.address_line_1" ,
+	psc."data.address.address_line_2" ,
+	psc."data.address.locality" ,
+	psc."data.address.postal_code",
+	psc."data.country_of_residence" ,
+	psc."data.date_of_birth.month" ,
+	psc."data.date_of_birth.year",
+	psc."data.kind" ,
+	psc."data.name" ,
+	psc."data.nationality" ,
+	psc."data.natures_of_control.0" ,
+	psc."data.notified_on"
+from
+	"ch_psc_2023_05_03" psc
+join cdr on
+	psc."company_number" = cdr."CompanyNumber"
+where
+	psc."data.ceased" is null
+	and psc."data.ceased_on" is null
+;
+`
+
+	_, err := conn.Query(context.Background(), query)
+	if err != nil {
+		return fmt.Errorf("get companies error: %s", err)
 	}
 
 	return nil

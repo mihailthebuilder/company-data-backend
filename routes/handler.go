@@ -21,8 +21,8 @@ type IEmailAPI interface {
 }
 
 type CompaniesAndOwnershipQueryResults struct {
-	Companies []Company
-	PSCs      []PSC
+	Companies []Company `json:"companies"`
+	PSCs      []PSC     `json:"personsWithSignificantControl"`
 }
 
 type Company struct {

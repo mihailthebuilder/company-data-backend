@@ -1,10 +1,17 @@
 package integrations
 
 import (
+	"company-data-backend/routes"
+
 	"database/sql"
 	"fmt"
 	"strings"
 )
+
+/*
+use new library
+do the multiple query thing
+*/
 
 type Database struct {
 	Host     string
@@ -14,21 +21,21 @@ type Database struct {
 	Name     string
 }
 
-func (d *Database) GetListOfCompanies(industry *string, isSample bool) ([]ProcessedCompany, error) {
+func (d *Database) GetCompaniesAndOwnershipForIndustry(industry *string, isSample bool) (routes.CompaniesAndOwnershipQueryResults, error) {
+	results := routes.CompaniesAndOwnershipQueryResults{}
+
 	conn, err := d.getDatabaseConnection()
 	if err != nil {
-		return nil, fmt.Errorf("error fetching database connection: %s", err)
+		return results, fmt.Errorf("error fetching database connection: %s", err)
 	}
 
 	defer conn.Close()
-
-	var companies []ProcessedCompany
 
 	template := getQueryTemplate(isSample)
 
 	rows, err := conn.Query(template, *industry)
 	if err != nil {
-		return nil, fmt.Errorf("query error: %s", err)
+		return results, fmt.Errorf("query error: %s", err)
 	}
 
 	for rows.Next() {
@@ -51,10 +58,10 @@ func (d *Database) GetListOfCompanies(industry *string, isSample bool) ([]Proces
 			&companyRow.NextAccountsDate,
 		)
 		if err != nil {
-			return nil, fmt.Errorf("error scanning db row: %s", err)
+			return results, fmt.Errorf("error scanning db row: %s", err)
 		}
 
-		processedCompany := ProcessedCompany{
+		processedCompany := routes.Company{
 			Name:                   companyRow.CompanyName,
 			CompaniesHouseUrl:      fmt.Sprintf("https://find-and-update.company-information.service.gov.uk/company/%s", companyRow.CompanyNumber),
 			Address:                generateAddress(companyRow.AddressLine1, companyRow.AddressLine2, companyRow.PostTown, companyRow.PostCode),
@@ -68,10 +75,10 @@ func (d *Database) GetListOfCompanies(industry *string, isSample bool) ([]Proces
 			NextAccountsDate:       companyRow.NextAccountsDate,
 		}
 
-		companies = append(companies, processedCompany)
+		results.Companies = append(results.Companies, processedCompany)
 	}
 
-	return companies, nil
+	return results, nil
 }
 
 type CompanyRow struct {
@@ -90,22 +97,6 @@ type CompanyRow struct {
 	LastAccountsDate       string
 	NextAccountsDate       string
 }
-
-type ProcessedCompany struct {
-	Name                   string `json:"name"`
-	CompaniesHouseUrl      string `json:"companiesHouseUrl"`
-	Address                string `json:"address"`
-	Size                   string `json:"size"`
-	IncorporationDate      string `json:"incorporationDate"`
-	MortgageCharges        int    `json:"mortgageCharges"`
-	MortgagesOutstanding   int    `json:"mortgagesOutstanding"`
-	MortgagesPartSatisfied int    `json:"mortgagesPartSatisfied"`
-	MortgagesSatisfied     int    `json:"mortgagesSatisfied"`
-	LastAccountsDate       string `json:"lastAccountsDate"`
-	NextAccountsDate       string `json:"nextAccountsDate"`
-}
-
-type PersonWithSignificantControl struct{}
 
 func (d *Database) getDatabaseConnection() (*sql.DB, error) {
 	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", d.Host, d.Port, d.User, d.Password, d.Name)

@@ -8,46 +8,31 @@ import (
 )
 
 func (h *RouteHandler) CompanyFullList(c *gin.Context) {
-	industry := c.MustGet("Industry").(string)
+	// industry := c.MustGet("Industry").(string)
 
-	companies, err := h.Database.GetListOfCompanies(&industry, false)
-	if err != nil {
-		log.Printf("Failed to get full list for sic %s. Error: %s", industry, err)
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
+	// companies, err := h.Database.GetListOfCompanies(&industry, false)
+	// if err != nil {
+	// 	log.Printf("Failed to get full list for sic %s. Error: %s", industry, err)
+	// 	c.AbortWithStatus(http.StatusInternalServerError)
+	// 	return
+	// }
 
-	log.Printf("returning %d companies for sic \"%s\"", len(companies), industry)
+	// log.Printf("returning %d companies for sic \"%s\"", len(companies), industry)
 
-	c.JSON(http.StatusOK, companies)
+	c.JSON(http.StatusOK, nil)
 }
 
 func (h *RouteHandler) CompanySampleV2(c *gin.Context) {
 	industry := c.MustGet("Industry").(string)
 
-	companies, err := h.Database.GetListOfCompanies(&industry, true)
+	results, err := h.Database.GetCompaniesAndOwnershipForIndustry(&industry, true)
 	if err != nil {
-		log.Printf("Failed to get company sample for sic %s. Error: %s", industry, err)
+		log.Printf("Failed to get sample for sic %s. Error: %s", industry, err)
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 
-	psc, err := h.Database.GetListOfPersonsWithSignificantControl(&companies)
-	if err != nil {
-		log.Printf("Failed to get psc sample for sic %s. Error: %s", industry, err)
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
+	log.Printf("returning %d companies and %d PSCs for sic \"%s\"", len(results.Companies), len(results.PSCs), industry)
 
-	log.Printf("returning %d companies and %d PSCs for sic \"%s\"", len(companies), len(psc), industry)
-
-	c.JSON(http.StatusOK, CompaniesRouteResponse{
-		Companies:                     companies,
-		PersonsWithSignificantControl: psc,
-	})
-}
-
-type CompaniesRouteResponse struct {
-	Companies                     []ProcessedCompany             `json:"companies"`
-	PersonsWithSignificantControl []PersonWithSignificantControl `json:"personsWithSignificantControl"`
+	c.JSON(http.StatusOK, results)
 }

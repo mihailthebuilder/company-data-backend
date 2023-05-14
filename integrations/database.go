@@ -306,6 +306,8 @@ func addAgeIfPossible(psc *routes.PSC, row PSCRow) error {
 		age--
 	}
 
+	print("Age is ", age)
+
 	psc.Age = age
 
 	return nil

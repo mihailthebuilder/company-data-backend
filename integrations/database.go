@@ -277,14 +277,7 @@ type PSCRow struct {
 }
 
 func addAgeIfPossible(psc *routes.PSC, row PSCRow) error {
-	if row.BirthMonth.Valid && row.BirthYear.Valid {
-		return nil
-	}
-
-	sMonth := row.BirthMonth.String
-	sYear := row.BirthYear.String
-
-	if len(sMonth) == 0 || len(sYear) == 0 {
+	if !row.BirthMonth.Valid && !row.BirthYear.Valid {
 		return nil
 	}
 
@@ -305,8 +298,6 @@ func addAgeIfPossible(psc *routes.PSC, row PSCRow) error {
 	if currentMonth < birthMonth {
 		age--
 	}
-
-	print("Age is ", age)
 
 	psc.Age = age
 

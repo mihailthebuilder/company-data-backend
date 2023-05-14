@@ -53,23 +53,6 @@ func (d *Database) GetCompaniesAndOwnershipForIndustry(industry *string, isSampl
 	return results, nil
 }
 
-type CompanyRow struct {
-	CompanyName            string
-	CompanyNumber          string
-	AddressLine1           sql.NullString
-	AddressLine2           sql.NullString
-	PostTown               sql.NullString
-	PostCode               sql.NullString
-	IncorporationDate      string
-	Size                   string
-	MortgageCharges        string
-	MortgagesOutstanding   string
-	MortgagesPartSatisfied string
-	MortgagesSatisfied     string
-	LastAccountsDate       string
-	NextAccountsDate       string
-}
-
 func (d *Database) getDatabaseConnection() (*pgx.Conn, error) {
 	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", d.Host, d.Port, d.User, d.Password, d.Name)
 
@@ -160,24 +143,8 @@ func addCompanyDataToResults(conn *pgx.Conn, results *routes.CompaniesAndOwnersh
 	}
 
 	for rows.Next() {
-		var companyRow CompanyRow
 
-		err = rows.Scan(
-			&companyRow.CompanyName,
-			&companyRow.CompanyNumber,
-			&companyRow.AddressLine1,
-			&companyRow.AddressLine2,
-			&companyRow.PostTown,
-			&companyRow.PostCode,
-			&companyRow.IncorporationDate,
-			&companyRow.Size,
-			&companyRow.MortgageCharges,
-			&companyRow.MortgagesOutstanding,
-			&companyRow.MortgagesPartSatisfied,
-			&companyRow.MortgagesSatisfied,
-			&companyRow.LastAccountsDate,
-			&companyRow.NextAccountsDate,
-		)
+		companyRow, err := pgx.RowToStructByPos[CompanyRow](rows)
 		if err != nil {
 			return fmt.Errorf("error scanning db row: %s", err)
 		}
@@ -222,6 +189,23 @@ func addCompanyDataToResults(conn *pgx.Conn, results *routes.CompaniesAndOwnersh
 	return nil
 }
 
+type CompanyRow struct {
+	CompanyName            string
+	CompanyNumber          string
+	AddressLine1           sql.NullString
+	AddressLine2           sql.NullString
+	PostTown               sql.NullString
+	PostCode               sql.NullString
+	IncorporationDate      string
+	Size                   string
+	MortgageCharges        string
+	MortgagesOutstanding   string
+	MortgagesPartSatisfied string
+	MortgagesSatisfied     string
+	LastAccountsDate       string
+	NextAccountsDate       string
+}
+
 func addPSCDataToResults(conn *pgx.Conn, results *routes.CompaniesAndOwnershipQueryResults) error {
 	query := `
 select
@@ -249,9 +233,13 @@ where
 ;
 `
 
-	_, err := conn.Query(context.Background(), query)
+	rows, err := conn.Query(context.Background(), query)
 	if err != nil {
 		return fmt.Errorf("get companies error: %s", err)
+	}
+
+	for rows.Next() {
+		continue
 	}
 
 	return nil

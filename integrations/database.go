@@ -215,7 +215,7 @@ select
 	psc."data.country_of_residence" ,
 	psc."data.date_of_birth.month" ,
 	psc."data.date_of_birth.year",
-	psc."data.kind" ,
+	kt."type",
 	psc."data.name" ,
 	psc."data.nationality" ,
 	psc."data.natures_of_control.0" ,
@@ -224,6 +224,7 @@ from
 	"ch_psc_2023_05_03" psc
 join cdr on
 	psc."company_number" = cdr."CompanyNumber"
+join psc_kind_to_type kt on psc."data.kind" = kt.kind 
 where
 	psc."data.ceased" is null
 	and psc."data.ceased_on" is null
@@ -246,6 +247,10 @@ where
 			Name:          row.Name.String,
 			Address:       generateAddress(row.Locality, row.AddressLine1, row.AddressLine2, row.Postcode, row.Country),
 			Nationality:   row.Nationality.String,
+			NotifiedOn:    row.NotifiedOn.String,
+			Type:          row.PersonType,
+			/* add control type and change person type, don't group, just put everything without dashes
+			 */
 		}
 
 		err = addAgeIfPossible(&psc, row)
@@ -269,11 +274,11 @@ type PSCRow struct {
 	Country       sql.NullString
 	BirthMonth    sql.NullString
 	BirthYear     sql.NullString
-	PersonType    sql.NullString
+	PersonType    string
 	Name          sql.NullString
 	Nationality   sql.NullString
 	ControlType   sql.NullString
-	NotifiedOn    string
+	NotifiedOn    sql.NullString
 }
 
 func addAgeIfPossible(psc *routes.PSC, row PSCRow) error {

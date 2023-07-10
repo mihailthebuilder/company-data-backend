@@ -46,4 +46,6 @@ type PSC struct {
 	Address       string `json:"address"`
 	Age           int    `json:"age"`
 	Nationality   string `json:"nationality"`
+	NotifiedOn    string `json:"notifiedOn"`
+	Type          string `json:"type"`
 }

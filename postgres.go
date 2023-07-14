@@ -42,25 +42,6 @@ func (d *Postgres) GetListOfCompanies(industry string, isSample bool) (*[]Compan
 	return &companies, nil
 }
 
-type CompanyDbRow struct {
-	CompanyName                       string
-	CompanyNumber                     string
-	AddressLine1                      sql.NullString
-	AddressLine2                      sql.NullString
-	PostTown                          sql.NullString
-	PostCode                          sql.NullString
-	IncorporationDate                 string
-	MortgageCharges                   int
-	AverageAge                        int
-	EndDate                           string
-	Employees                         sql.NullString
-	Equity                            sql.NullString
-	NetCurrentAssets                  sql.NullString
-	TotalAssetsLessCurrentLiabilities sql.NullString
-	FixedAssets                       sql.NullString
-	Cash                              sql.NullString
-}
-
 func (d *Postgres) getDatabaseConnection() (*sql.DB, error) {
 	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", d.Host, d.Port, d.User, d.Password, d.Name)
 
@@ -70,24 +51,6 @@ func (d *Postgres) getDatabaseConnection() (*sql.DB, error) {
 	}
 
 	return db, nil
-}
-
-func generateAddress(addressEntries ...sql.NullString) string {
-	nonEmptyAddressEntries := []string{}
-
-	for _, entry := range addressEntries {
-		if !entry.Valid {
-			continue
-		}
-
-		entryWithoutWhitespace := strings.TrimSpace(entry.String)
-
-		if len(entryWithoutWhitespace) > 0 {
-			nonEmptyAddressEntries = append(nonEmptyAddressEntries, entry.String)
-		}
-	}
-
-	return strings.Join(nonEmptyAddressEntries, ", ")
 }
 
 const COMPANY_QUERY = `
@@ -124,6 +87,25 @@ where
 	)
 ;
 `
+
+type CompanyDbRow struct {
+	CompanyName                       string
+	CompanyNumber                     string
+	AddressLine1                      sql.NullString
+	AddressLine2                      sql.NullString
+	PostTown                          sql.NullString
+	PostCode                          sql.NullString
+	IncorporationDate                 string
+	MortgageCharges                   int
+	AverageAge                        int
+	EndDate                           string
+	Employees                         sql.NullString
+	Equity                            sql.NullString
+	NetCurrentAssets                  sql.NullString
+	TotalAssetsLessCurrentLiabilities sql.NullString
+	FixedAssets                       sql.NullString
+	Cash                              sql.NullString
+}
 
 func getCompanyFromRow(rows *sql.Rows) (Company, error) {
 	var row CompanyDbRow
@@ -217,4 +199,22 @@ func getCompanyFromRow(rows *sql.Rows) (Company, error) {
 	}
 
 	return company, nil
+}
+
+func generateAddress(addressEntries ...sql.NullString) string {
+	nonEmptyAddressEntries := []string{}
+
+	for _, entry := range addressEntries {
+		if !entry.Valid {
+			continue
+		}
+
+		entryWithoutWhitespace := strings.TrimSpace(entry.String)
+
+		if len(entryWithoutWhitespace) > 0 {
+			nonEmptyAddressEntries = append(nonEmptyAddressEntries, entry.String)
+		}
+	}
+
+	return strings.Join(nonEmptyAddressEntries, ", ")
 }

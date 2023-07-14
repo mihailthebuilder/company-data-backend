@@ -155,8 +155,8 @@ SELECT
 	co."Mortgages.NumMortSatisfied",
 	co."Accounts.LastMadeUpDate",
 	co."Accounts.NextDueDate"
-FROM "ch_company_2023_05_01" co
-TABLESAMPLE SYSTEM (10)
+FROM "company_ch" co
+TABLESAMPLE SYSTEM (30)
 JOIN "accounts_to_size" acs on co."Accounts.AccountCategory" = acs."accountcategory"
 WHERE
 	$1 IN (

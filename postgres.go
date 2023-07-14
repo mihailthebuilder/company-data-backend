@@ -40,31 +40,50 @@ func (d *Postgres) GetListOfCompanies(industry string, isSample bool) (*[]Compan
 			&row.PostTown,
 			&row.PostCode,
 			&row.IncorporationDate,
-			&row.Size,
 			&row.MortgageCharges,
-			&row.MortgagesOutstanding,
-			&row.MortgagesPartSatisfied,
-			&row.MortgagesSatisfied,
-			&row.LastAccountsDate,
-			&row.NextAccountsDate,
+			&row.AverageAge,
+			&row.EndDate,
+			&row.Employees,
+			&row.Equity,
+			&row.NetCurrentAssets,
+			&row.TotalAssetsLessCurrentLiabilities,
+			&row.FixedAssets,
+			&row.Cash,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("error scanning db row: %s", err)
 		}
 
 		company := Company{
-			Name:                   row.CompanyName,
-			CompaniesHouseUrl:      fmt.Sprintf("https://find-and-update.company-information.service.gov.uk/company/%s", row.CompanyNumber),
-			Address:                generateAddress(row.AddressLine1, row.AddressLine2, row.PostTown, row.PostCode),
-			IncorporationDate:      row.IncorporationDate,
-			Size:                   row.Size,
-			MortgageCharges:        row.MortgageCharges,
-			MortgagesOutstanding:   row.MortgagesOutstanding,
-			MortgagesPartSatisfied: row.MortgagesPartSatisfied,
-			MortgagesSatisfied:     row.MortgagesSatisfied,
-			LastAccountsDate:       row.LastAccountsDate,
-			NextAccountsDate:       row.NextAccountsDate,
+			Name:               row.CompanyName,
+			CompaniesHouseUrl:  fmt.Sprintf("https://find-and-update.company-information.service.gov.uk/company/%s", row.CompanyNumber),
+			Address:            generateAddress(row.AddressLine1, row.AddressLine2),
+			IncorporationDate:  row.IncorporationDate,
+			MortgageCharges:    row.MortgageCharges,
+			AverageAgeOfOwners: row.AverageAge,
+			LastAccountsDate:   row.EndDate,
 		}
+
+		setValidStringField(row.PostTown, &company.Town)
+		setValidStringField(row.PostCode, &company.Postcode)
+		setValidInt32Field(row.Employees, &company.Employees)
+		setValidInt32Field(row.Equity, &company.Equity)
+		setValidInt32Field(row.NetCurrentAssets, &company.NetCurrentAssets)
+		setValidInt32Field(row.FixedAssets, &company.FixedAssets)
+
+		if company.FixedAssets == 0 {
+			if row.TotalAssetsLessCurrentLiabilities.Valid {
+				company.FixedAssets = int(row.TotalAssetsLessCurrentLiabilities.Int32)
+
+				if row.NetCurrentAssets.Valid {
+					company.FixedAssets = company.FixedAssets - int(row.NetCurrentAssets.Int32)
+				} else if row.Cash.Valid {
+					company.FixedAssets = company.FixedAssets - int(row.Cash.Int32)
+				}
+			}
+		}
+
+		setValidInt32Field(row.Cash, &company.Cash)
 
 		companies = append(companies, company)
 	}
@@ -73,20 +92,22 @@ func (d *Postgres) GetListOfCompanies(industry string, isSample bool) (*[]Compan
 }
 
 type CompanyDbRow struct {
-	CompanyName            string
-	CompanyNumber          string
-	AddressLine1           sql.NullString
-	AddressLine2           sql.NullString
-	PostTown               sql.NullString
-	PostCode               sql.NullString
-	Size                   string
-	IncorporationDate      string
-	MortgageCharges        int
-	MortgagesOutstanding   int
-	MortgagesPartSatisfied int
-	MortgagesSatisfied     int
-	LastAccountsDate       string
-	NextAccountsDate       string
+	CompanyName                       string
+	CompanyNumber                     string
+	AddressLine1                      sql.NullString
+	AddressLine2                      sql.NullString
+	PostTown                          sql.NullString
+	PostCode                          sql.NullString
+	IncorporationDate                 string
+	MortgageCharges                   int
+	AverageAge                        int
+	EndDate                           string
+	Employees                         sql.NullInt32
+	Equity                            sql.NullInt32
+	NetCurrentAssets                  sql.NullInt32
+	TotalAssetsLessCurrentLiabilities sql.NullInt32
+	FixedAssets                       sql.NullInt32
+	Cash                              sql.NullInt32
 }
 
 func (d *Postgres) getDatabaseConnection() (*sql.DB, error) {
@@ -118,36 +139,49 @@ func generateAddress(addressEntries ...sql.NullString) string {
 	return strings.Join(nonEmptyAddressEntries, ", ")
 }
 
+func setValidStringField(valid sql.NullString, field *string) {
+	if valid.Valid {
+		*field = valid.String
+	}
+}
+
+func setValidInt32Field(valid sql.NullInt32, field *int) {
+	if valid.Valid {
+		*field = int(valid.Int32)
+	}
+}
+
 const COMPANY_QUERY = `
-SELECT 
-	co."CompanyName",
-	co."CompanyNumber",
-	co."RegAddress.AddressLine1",
-	co."RegAddress.AddressLine2",
-	co."RegAddress.PostTown",
-	co."RegAddress.PostCode",
-	co."IncorporationDate",
-	acs."size",
-	co."Mortgages.NumMortCharges",
-	co."Mortgages.NumMortOutstanding",
-	co."Mortgages.NumMortPartSatisfied",
-	co."Mortgages.NumMortSatisfied",
-	co."Accounts.LastMadeUpDate",
-	co."Accounts.NextDueDate"
-FROM "company_ch" co
-TABLESAMPLE SYSTEM (30)
-JOIN "accounts_to_size" acs on co."Accounts.AccountCategory" = acs."accountcategory"
-WHERE
-	$1 IN (
-		co."SICCode.SicText_1", co."SICCode.SicText_2", co."SICCode.SicText_3", co."SICCode.SicText_4"
+select
+	cc."CompanyName" ,
+	cc."CompanyNumber" ,
+	cc."RegAddress.AddressLine1" ,
+	cc."RegAddress.AddressLine2" ,
+	cc."RegAddress.PostTown",
+	cc."RegAddress.PostCode",
+	cc."IncorporationDate" ,
+	cc."Mortgages.NumMortCharges" ,
+	caa.average_age ,
+	lad.end_date ,
+	lad.employees ,
+	coalesce(lad.equity,
+	lad.net_assets_liabilities ) "equity",
+	lad.net_current_assets_liabilities ,
+	lad.total_assets_less_current_liabilities ,
+	lad.fixed_assets ,
+	lad.cash
+from
+	company_ch cc
+join company_average_age caa on
+	caa.company_number = cc."CompanyNumber"
+join latest_accounts_data lad on
+	lad.reference_number = cc."CompanyNumber"
+where
+	cc."CompanyStatus" = 'Active'
+	and cc."Accounts.AccountCategory" not in ('DORMANT', 'NO ACCOUNTS FILED', 'ACCOUNTS TYPE NOT AVAILABLE')
+	and cc."CompanyCategory" = 'Private Limited Company'
+	and $1 in (
+		cc."SICCode.SicText_1", cc."SICCode.SicText_2", cc."SICCode.SicText_3", cc."SICCode.SicText_4"
 	)
-	AND co."CompanyStatus" = 'Active'
-	AND acs."size" <> 'no accounts available / dormant'
-ORDER BY RANDOM()
-LIMIT 10
 ;
 `
-
-func (d *Postgres) GetListOfPersonsWithSignificantControl(*[]Company) (*[]PersonWithSignificantControl, error) {
-	return nil, nil
-}

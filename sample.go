@@ -17,22 +17,13 @@ func (h *RouteHandler) CompanySample(c *gin.Context) {
 		return
 	}
 
-	psc, err := h.Datastore.GetListOfPersonsWithSignificantControl(companies)
-	if err != nil {
-		log.Printf("Failed to get psc sample for sic %s. Error: %s", industry, err)
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
-	log.Printf("returning %d companies and %d PSCs for sic \"%s\"", len(*companies), len(*psc), industry)
+	log.Printf("returning %d companies for sic %s", len(*companies), industry)
 
 	c.JSON(http.StatusOK, SampleRouteResponse{
-		Companies:                     *companies,
-		PersonsWithSignificantControl: *psc,
+		Companies: *companies,
 	})
 }
 
 type SampleRouteResponse struct {
-	Companies                     []Company                      `json:"companies"`
-	PersonsWithSignificantControl []PersonWithSignificantControl `json:"personsWithSignificantControl"`
+	Companies []Company `json:"companies"`
 }

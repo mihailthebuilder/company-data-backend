@@ -43,7 +43,7 @@ type RouteHandler struct {
 }
 
 type Datastore interface {
-	GetListOfCompanies(industry string, isSample bool) (*[]*Company, error)
+	GetListOfCompanies(industry string, isSample bool) ([]Company, error)
 }
 
 func isRunningLocally() bool {

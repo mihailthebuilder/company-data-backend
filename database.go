@@ -7,7 +7,7 @@ import (
 )
 
 type IDatabase interface {
-	GetListOfCompanies(industry *string, isSample bool) ([]Company, error)
+	GetListOfCompanies(industry string, isSample bool) ([]Company, error)
 	GetListOfPersonsWithSignificantControl(*[]Company) ([]PersonWithSignificantControl, error)
 }
 
@@ -19,7 +19,7 @@ type Database struct {
 	Name     string
 }
 
-func (d *Database) GetListOfCompanies(industry *string, isSample bool) ([]Company, error) {
+func (d *Database) GetListOfCompanies(industry string, isSample bool) ([]Company, error) {
 	conn, err := d.getDatabaseConnection()
 	if err != nil {
 		return nil, fmt.Errorf("error fetching database connection: %s", err)
@@ -29,9 +29,7 @@ func (d *Database) GetListOfCompanies(industry *string, isSample bool) ([]Compan
 
 	var companies []Company
 
-	template := getQueryTemplate(isSample)
-
-	rows, err := conn.Query(template, *industry)
+	rows, err := conn.Query(COMPANY_QUERY, industry)
 	if err != nil {
 		return nil, fmt.Errorf("query error: %s", err)
 	}
@@ -141,19 +139,7 @@ func generateAddress(addressEntries ...sql.NullString) string {
 	return strings.Join(nonEmptyAddressEntries, ", ")
 }
 
-func getQueryTemplate(sample bool) string {
-	var template string
-
-	if sample {
-		template = fmt.Sprintf(QUERY_TEMPLATE, "TABLESAMPLE SYSTEM (10)", "ORDER BY RANDOM()", "LIMIT 10")
-	} else {
-		template = fmt.Sprintf(QUERY_TEMPLATE, "", "", "")
-	}
-
-	return template
-}
-
-const QUERY_TEMPLATE = `
+const COMPANY_QUERY = `
 SELECT 
 	co."CompanyName",
 	co."CompanyNumber",
@@ -170,7 +156,7 @@ SELECT
 	co."Accounts.LastMadeUpDate",
 	co."Accounts.NextDueDate"
 FROM "ch_company_2023_05_01" co
-%s
+TABLESAMPLE SYSTEM (10)
 JOIN "accounts_to_size" acs on co."Accounts.AccountCategory" = acs."accountcategory"
 WHERE
 	$1 IN (
@@ -178,8 +164,8 @@ WHERE
 	)
 	AND co."CompanyStatus" = 'Active'
 	AND acs."size" <> 'no accounts available / dormant'
-%s
-%s
+ORDER BY RANDOM()
+LIMIT 10
 ;
 `
 

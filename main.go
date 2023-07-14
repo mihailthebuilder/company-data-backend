@@ -15,7 +15,7 @@ func main() {
 		loadEnvironmentVariablesFromDotEnvFile()
 	}
 
-	c := &RouteHandler{
+	h := &RouteHandler{
 		Database: &Database{
 			Host:     getEnv("DB_HOST"),
 			Port:     getEnv("DB_PORT"),
@@ -25,23 +25,21 @@ func main() {
 		},
 	}
 
-	r := createRouter(c)
-
-	r.Run()
-}
-
-func createRouter(handler *RouteHandler) *gin.Engine {
 	r := gin.Default()
 
 	serverRecoversFromAnyPanicAndWrites500(r)
 	allowAllOriginsForCORS(r)
 
-	v2 := r.Group("/v2", handler.CollectAndVerifyIndustryRequested)
+	v2 := r.Group("/v2", h.CollectAndVerifyIndustryRequested)
 	{
-		v2.POST("/companies/sample", handler.CompanySample)
+		v2.POST("/companies/sample", h.CompanySample)
 	}
 
-	return r
+	r.Run()
+}
+
+type RouteHandler struct {
+	Database IDatabase
 }
 
 func isRunningLocally() bool {

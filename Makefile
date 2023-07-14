@@ -2,4 +2,4 @@ run:
 	go run .
 
 deploy:
-	caprover deploy
+	caprover deploy --default

@@ -12,7 +12,7 @@ type Company struct {
 	LastAccountsDate   string `json:"lastAccountsDate"`
 	Employees          int    `json:"employees,omitempty"`
 	Equity             int    `json:"equity,omitempty"`
-	NetCurrentAssets   int    `json:"netAssets,omitempty"`
+	NetCurrentAssets   int    `json:"netCurrentAssets,omitempty"`
 	FixedAssets        int    `json:"fixedAssets,omitempty"`
 	Cash               int    `json:"cash,omitempty"`
 }

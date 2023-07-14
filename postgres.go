@@ -85,6 +85,7 @@ where
 	and $1 in (
 		cc."SICCode.SicText_1", cc."SICCode.SicText_2", cc."SICCode.SicText_3", cc."SICCode.SicText_4"
 	)
+limit 10
 ;
 `
 

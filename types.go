@@ -3,16 +3,16 @@ package main
 type Company struct {
 	Name               string `json:"name"`
 	CompaniesHouseUrl  string `json:"companiesHouseUrl"`
-	Address            string `json:"address",omitempty`
-	Town               string `json:"town",omitempty`
-	Postcode           string `json:"postcode",omitempty`
-	IncorporationDate  string `json:"incorporationDate",omitempty`
-	MortgageCharges    int    `json:"mortgageCharges",omitempty`
-	AverageAgeOfOwners int    `json:"averageAgeOfOwners",omitempty`
-	LastAccountsDate   string `json:"lastAccountsDate",omitempty`
-	Employees          int    `json:"employees",omitempty`
-	Equity             int    `json:"equity",omitempty`
-	NetCurrentAssets   int    `json:"netAssets",omitempty`
-	FixedAssets        int    `json:"fixedAssets",omitempty`
-	Cash               int    `json:"cash",omitempty`
+	Address            string `json:"address"`
+	Town               string `json:"town"`
+	Postcode           string `json:"postcode"`
+	IncorporationDate  string `json:"incorporationDate"`
+	MortgageCharges    int    `json:"mortgageCharges"`
+	AverageAgeOfOwners int    `json:"averageAgeOfOwners"`
+	LastAccountsDate   string `json:"lastAccountsDate"`
+	Employees          int    `json:"employees"`
+	Equity             int    `json:"equity"`
+	NetCurrentAssets   int    `json:"netAssets"`
+	FixedAssets        int    `json:"fixedAssets"`
+	Cash               int    `json:"cash"`
 }

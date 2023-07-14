@@ -7,8 +7,8 @@ import (
 )
 
 type IDatabase interface {
-	GetListOfCompanies(industry *string, isSample bool) ([]ProcessedCompany, error)
-	GetListOfPersonsWithSignificantControl(*[]ProcessedCompany) ([]PersonWithSignificantControl, error)
+	GetListOfCompanies(industry *string, isSample bool) ([]Company, error)
+	GetListOfPersonsWithSignificantControl(*[]Company) ([]PersonWithSignificantControl, error)
 }
 
 type Database struct {
@@ -19,7 +19,7 @@ type Database struct {
 	Name     string
 }
 
-func (d *Database) GetListOfCompanies(industry *string, isSample bool) ([]ProcessedCompany, error) {
+func (d *Database) GetListOfCompanies(industry *string, isSample bool) ([]Company, error) {
 	conn, err := d.getDatabaseConnection()
 	if err != nil {
 		return nil, fmt.Errorf("error fetching database connection: %s", err)
@@ -27,7 +27,7 @@ func (d *Database) GetListOfCompanies(industry *string, isSample bool) ([]Proces
 
 	defer conn.Close()
 
-	var companies []ProcessedCompany
+	var companies []Company
 
 	template := getQueryTemplate(isSample)
 
@@ -37,49 +37,49 @@ func (d *Database) GetListOfCompanies(industry *string, isSample bool) ([]Proces
 	}
 
 	for rows.Next() {
-		var companyRow CompanyRow
+		var row CompanyDbRow
 
 		err = rows.Scan(
-			&companyRow.CompanyName,
-			&companyRow.CompanyNumber,
-			&companyRow.AddressLine1,
-			&companyRow.AddressLine2,
-			&companyRow.PostTown,
-			&companyRow.PostCode,
-			&companyRow.IncorporationDate,
-			&companyRow.Size,
-			&companyRow.MortgageCharges,
-			&companyRow.MortgagesOutstanding,
-			&companyRow.MortgagesPartSatisfied,
-			&companyRow.MortgagesSatisfied,
-			&companyRow.LastAccountsDate,
-			&companyRow.NextAccountsDate,
+			&row.CompanyName,
+			&row.CompanyNumber,
+			&row.AddressLine1,
+			&row.AddressLine2,
+			&row.PostTown,
+			&row.PostCode,
+			&row.IncorporationDate,
+			&row.Size,
+			&row.MortgageCharges,
+			&row.MortgagesOutstanding,
+			&row.MortgagesPartSatisfied,
+			&row.MortgagesSatisfied,
+			&row.LastAccountsDate,
+			&row.NextAccountsDate,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("error scanning db row: %s", err)
 		}
 
-		processedCompany := ProcessedCompany{
-			Name:                   companyRow.CompanyName,
-			CompaniesHouseUrl:      fmt.Sprintf("https://find-and-update.company-information.service.gov.uk/company/%s", companyRow.CompanyNumber),
-			Address:                generateAddress(companyRow.AddressLine1, companyRow.AddressLine2, companyRow.PostTown, companyRow.PostCode),
-			IncorporationDate:      companyRow.IncorporationDate,
-			Size:                   companyRow.Size,
-			MortgageCharges:        companyRow.MortgageCharges,
-			MortgagesOutstanding:   companyRow.MortgagesOutstanding,
-			MortgagesPartSatisfied: companyRow.MortgagesPartSatisfied,
-			MortgagesSatisfied:     companyRow.MortgagesSatisfied,
-			LastAccountsDate:       companyRow.LastAccountsDate,
-			NextAccountsDate:       companyRow.NextAccountsDate,
+		company := Company{
+			Name:                   row.CompanyName,
+			CompaniesHouseUrl:      fmt.Sprintf("https://find-and-update.company-information.service.gov.uk/company/%s", row.CompanyNumber),
+			Address:                generateAddress(row.AddressLine1, row.AddressLine2, row.PostTown, row.PostCode),
+			IncorporationDate:      row.IncorporationDate,
+			Size:                   row.Size,
+			MortgageCharges:        row.MortgageCharges,
+			MortgagesOutstanding:   row.MortgagesOutstanding,
+			MortgagesPartSatisfied: row.MortgagesPartSatisfied,
+			MortgagesSatisfied:     row.MortgagesSatisfied,
+			LastAccountsDate:       row.LastAccountsDate,
+			NextAccountsDate:       row.NextAccountsDate,
 		}
 
-		companies = append(companies, processedCompany)
+		companies = append(companies, company)
 	}
 
 	return companies, nil
 }
 
-type CompanyRow struct {
+type CompanyDbRow struct {
 	CompanyName            string
 	CompanyNumber          string
 	AddressLine1           sql.NullString
@@ -96,7 +96,7 @@ type CompanyRow struct {
 	NextAccountsDate       string
 }
 
-type ProcessedCompany struct {
+type Company struct {
 	Name                   string `json:"name"`
 	CompaniesHouseUrl      string `json:"companiesHouseUrl"`
 	Address                string `json:"address"`
@@ -183,6 +183,6 @@ WHERE
 ;
 `
 
-func (d *Database) GetListOfPersonsWithSignificantControl(*[]ProcessedCompany) ([]PersonWithSignificantControl, error) {
+func (d *Database) GetListOfPersonsWithSignificantControl(*[]Company) ([]PersonWithSignificantControl, error) {
 	return nil, nil
 }

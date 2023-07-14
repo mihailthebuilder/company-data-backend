@@ -31,7 +31,7 @@ func (d *Postgres) GetListOfCompanies(industry string, isSample bool) (*[]Compan
 	}
 
 	for rows.Next() {
-		company, err := getCompanyFromRow(rows)
+		company, err := getCompany(rows)
 		if err != nil {
 			return nil, fmt.Errorf("error getting company from row: %s", err)
 		}
@@ -107,7 +107,7 @@ type CompanyDbRow struct {
 	Cash                              sql.NullString
 }
 
-func getCompanyFromRow(rows *sql.Rows) (Company, error) {
+func getCompany(rows *sql.Rows) (Company, error) {
 	var row CompanyDbRow
 
 	err := rows.Scan(

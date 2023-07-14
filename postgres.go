@@ -152,55 +152,34 @@ func getCompany(rows *sql.Rows) (Company, error) {
 		company.Postcode = row.PostCode.String
 	}
 
-	if row.Employees.Valid {
-		employees, err := strconv.ParseFloat(row.Employees.String, 64)
-		if err == nil {
-			company.Employees = int(employees)
-		}
-	}
+	setIntValueIfValid(row.Employees, &company.Employees)
+	setIntValueIfValid(row.Equity, &company.Equity)
+	setIntValueIfValid(row.Cash, &company.Cash)
 
-	if row.Equity.Valid {
-		equity, err := strconv.ParseFloat(row.Equity.String, 64)
-		if err == nil {
-			company.Equity = int(equity)
-		}
-	}
+	ncaError := setIntValueIfValid(row.NetCurrentAssets, &company.NetCurrentAssets)
 
-	if row.NetCurrentAssets.Valid {
-		netCurrentAssets, err := strconv.ParseFloat(row.NetCurrentAssets.String, 64)
-		if err == nil {
-			company.NetCurrentAssets = int(netCurrentAssets)
-		}
-	}
+	faError := setIntValueIfValid(row.FixedAssets, &company.FixedAssets)
 
-	if row.Cash.Valid {
-		cash, err := strconv.ParseFloat(row.Cash.String, 64)
-		if err == nil {
-			company.Cash = int(cash)
-		}
-	}
-
-	if row.FixedAssets.Valid {
-		fixedAssets, err := strconv.ParseFloat(row.FixedAssets.String, 64)
-		if err == nil {
-			company.FixedAssets = int(fixedAssets)
-		}
-	}
-
-	if company.FixedAssets == 0 && row.TotalAssetsLessCurrentLiabilities.Valid {
-		totalAssetsLessCurrentLiabilities, err := strconv.ParseFloat(row.TotalAssetsLessCurrentLiabilities.String, 64)
-		if err == nil {
-			company.FixedAssets = int(totalAssetsLessCurrentLiabilities)
-		}
-
-		if company.NetCurrentAssets > 0 {
+	if faError != nil {
+		talclError := setIntValueIfValid(row.TotalAssetsLessCurrentLiabilities, &company.FixedAssets)
+		if talclError != nil && ncaError == nil {
 			company.FixedAssets = company.FixedAssets - company.NetCurrentAssets
-		} else if company.Cash > 0 {
-			company.FixedAssets = company.FixedAssets - company.Cash
 		}
 	}
 
 	return company, nil
+}
+
+func setIntValueIfValid(value sql.NullString, target *int) error {
+	if value.Valid {
+		intValue, err := strconv.ParseInt(value.String, 10, 64)
+		if err == nil {
+			*target = int(intValue)
+			return nil
+		}
+		return err
+	}
+	return fmt.Errorf("value is not valid")
 }
 
 func generateAddress(addressEntries ...sql.NullString) string {

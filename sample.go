@@ -7,29 +7,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func (h *RouteHandler) CollectAndVerifyIndustryRequested(c *gin.Context) {
-	var body SampleRequestBody
-	if err := c.ShouldBindJSON(&body); err != nil {
-		log.Println("Error parsing request body: ", err)
-		c.AbortWithStatus(http.StatusBadRequest)
-		return
-	}
-
-	if len(body.SicDescription) == 0 || len(body.SicDescription) > 200 {
-		log.Println("Invalid industry request: ", body.SicDescription)
-		c.AbortWithStatus(http.StatusBadRequest)
-		return
-	}
-
-	c.Set("Industry", body.SicDescription)
-
-	c.Next()
-}
-
-type SampleRequestBody struct {
-	SicDescription string
-}
-
 func (h *RouteHandler) CompanySample(c *gin.Context) {
 	industry := c.MustGet("Industry").(string)
 
@@ -49,13 +26,13 @@ func (h *RouteHandler) CompanySample(c *gin.Context) {
 
 	log.Printf("returning %d companies and %d PSCs for sic \"%s\"", len(companies), len(psc), industry)
 
-	c.JSON(http.StatusOK, CompaniesRouteResponse{
+	c.JSON(http.StatusOK, SampleRouteResponse{
 		Companies:                     companies,
 		PersonsWithSignificantControl: psc,
 	})
 }
 
-type CompaniesRouteResponse struct {
+type SampleRouteResponse struct {
 	Companies                     []ProcessedCompany             `json:"companies"`
 	PersonsWithSignificantControl []PersonWithSignificantControl `json:"personsWithSignificantControl"`
 }

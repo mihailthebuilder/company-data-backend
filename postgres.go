@@ -74,6 +74,7 @@ select
 	lad.cash
 from
 	company_ch cc
+tablesample system (20)
 join company_average_age caa on
 	caa.company_number = cc."CompanyNumber"
 join latest_accounts_data lad on

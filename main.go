@@ -16,7 +16,7 @@ func main() {
 	}
 
 	h := &RouteHandler{
-		Database: &Database{
+		Datastore: &Postgres{
 			Host:     getEnv("DB_HOST"),
 			Port:     getEnv("DB_PORT"),
 			User:     getEnv("DB_USER"),
@@ -39,10 +39,10 @@ func main() {
 }
 
 type RouteHandler struct {
-	Database IDatabase
+	Datastore Datastore
 }
 
-type IDatabase interface {
+type Datastore interface {
 	GetListOfCompanies(industry string, isSample bool) ([]Company, error)
 	GetListOfPersonsWithSignificantControl(*[]Company) ([]PersonWithSignificantControl, error)
 }

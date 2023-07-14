@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-type Database struct {
+type Postgres struct {
 	Host     string
 	Port     string
 	User     string
@@ -14,7 +14,7 @@ type Database struct {
 	Name     string
 }
 
-func (d *Database) GetListOfCompanies(industry string, isSample bool) ([]Company, error) {
+func (d *Postgres) GetListOfCompanies(industry string, isSample bool) ([]Company, error) {
 	conn, err := d.getDatabaseConnection()
 	if err != nil {
 		return nil, fmt.Errorf("error fetching database connection: %s", err)
@@ -105,7 +105,7 @@ type Company struct {
 
 type PersonWithSignificantControl struct{}
 
-func (d *Database) getDatabaseConnection() (*sql.DB, error) {
+func (d *Postgres) getDatabaseConnection() (*sql.DB, error) {
 	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", d.Host, d.Port, d.User, d.Password, d.Name)
 
 	db, err := sql.Open("postgres", connStr)
@@ -164,6 +164,6 @@ LIMIT 10
 ;
 `
 
-func (d *Database) GetListOfPersonsWithSignificantControl(*[]Company) ([]PersonWithSignificantControl, error) {
+func (d *Postgres) GetListOfPersonsWithSignificantControl(*[]Company) ([]PersonWithSignificantControl, error) {
 	return nil, nil
 }

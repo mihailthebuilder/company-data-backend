@@ -10,9 +10,9 @@ type Company struct {
 	MortgageCharges    int    `json:"mortgageCharges"`
 	AverageAgeOfOwners int    `json:"averageAgeOfOwners"`
 	LastAccountsDate   string `json:"lastAccountsDate"`
-	Employees          int    `json:"employees"`
-	Equity             int    `json:"equity"`
-	NetCurrentAssets   int    `json:"netAssets"`
-	FixedAssets        int    `json:"fixedAssets"`
-	Cash               int    `json:"cash"`
+	Employees          int    `json:"employees,omitempty"`
+	Equity             int    `json:"equity,omitempty"`
+	NetCurrentAssets   int    `json:"netAssets,omitempty"`
+	FixedAssets        int    `json:"fixedAssets,omitempty"`
+	Cash               int    `json:"cash,omitempty"`
 }

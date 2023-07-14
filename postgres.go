@@ -15,7 +15,7 @@ type Postgres struct {
 	Name     string
 }
 
-func (d *Postgres) GetListOfCompanies(industry string, isSample bool) (*[]Company, error) {
+func (d *Postgres) GetListOfCompanies(industry string, isSample bool) (*[]*Company, error) {
 	conn, err := d.getDatabaseConnection()
 	if err != nil {
 		return nil, fmt.Errorf("error fetching database connection: %s", err)
@@ -23,7 +23,7 @@ func (d *Postgres) GetListOfCompanies(industry string, isSample bool) (*[]Compan
 
 	defer conn.Close()
 
-	var companies []Company
+	var companies []*Company
 
 	rows, err := conn.Query(COMPANY_QUERY, industry)
 	if err != nil {
@@ -36,7 +36,7 @@ func (d *Postgres) GetListOfCompanies(industry string, isSample bool) (*[]Compan
 			return nil, fmt.Errorf("error getting company from row: %s", err)
 		}
 
-		companies = append(companies, company)
+		companies = append(companies, &company)
 	}
 
 	return &companies, nil

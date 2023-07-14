@@ -17,13 +17,13 @@ func (h *RouteHandler) CompanySample(c *gin.Context) {
 		return
 	}
 
-	log.Printf("returning %d companies for sic %s", len(*companies), industry)
+	log.Printf("returning %d companies for %s", len(*companies), industry)
 
 	c.JSON(http.StatusOK, SampleRouteResponse{
-		Companies: *companies,
+		Companies: companies,
 	})
 }
 
 type SampleRouteResponse struct {
-	Companies []Company `json:"companies"`
+	Companies *[]*Company `json:"companies"`
 }

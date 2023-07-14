@@ -46,7 +46,7 @@ func (h *RouteHandler) CompanyFullList(c *gin.Context) {
 	c.JSON(http.StatusOK, companies)
 }
 
-func (h *RouteHandler) CompanySampleV2(c *gin.Context) {
+func (h *RouteHandler) CompanySample(c *gin.Context) {
 	industry := c.MustGet("Industry").(string)
 
 	companies, err := h.Database.GetListOfCompanies(&industry, true)

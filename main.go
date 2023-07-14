@@ -16,9 +16,6 @@ func main() {
 	}
 
 	c := &RouteHandler{
-		EmailAPI:                  &EmailAPI{URL: getEnv("EMAIL_API_URL")},
-		JwtTokenLifespanInMinutes: getEnv("TOKEN_MINUTE_LIFESPAN"),
-		ApiSecret:                 getEnv("API_SECRET"),
 		Database: &Database{
 			Host:     getEnv("DB_HOST"),
 			Port:     getEnv("DB_PORT"),
@@ -34,10 +31,7 @@ func main() {
 }
 
 type RouteHandler struct {
-	EmailAPI                  IEmailAPI
-	JwtTokenLifespanInMinutes string
-	ApiSecret                 string
-	Database                  IDatabase
+	Database IDatabase
 }
 
 func isRunningLocally() bool {
@@ -51,34 +45,18 @@ func loadEnvironmentVariablesFromDotEnvFile() {
 	}
 }
 
-func createRouter(handler *RouteHandler) *gin.Engine {
-	r := gin.Default()
-
-	serverRecoversFromAnyPanicAndWrites500(r)
-	allowAllOriginsForCORS(r)
-
-	v2 := r.Group("/v2")
-	{
-		v2.POST("/register", handler.Register)
-
-		companies := v2.Group("/companies", handler.CollectAndVerifyIndustryRequested)
-		{
-			companies.POST("/sample", handler.CompanySampleV2)
-
-			authorised := companies.Group("/authorized", handler.VerifyAuthorization)
-			{
-				authorised.POST("/full", handler.CompanyFullList)
-			}
-		}
-	}
-
-	return r
-}
-
 func serverRecoversFromAnyPanicAndWrites500(engine *gin.Engine) {
 	engine.Use(gin.Recovery())
 }
 
 func allowAllOriginsForCORS(engine *gin.Engine) {
 	engine.Use(cors.Default())
+}
+
+func getEnv(env string) string {
+	val := os.Getenv(env)
+	if val == "" {
+		log.Fatal("Environment variable not set:", env)
+	}
+	return val
 }

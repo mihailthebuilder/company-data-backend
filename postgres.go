@@ -89,22 +89,6 @@ type CompanyDbRow struct {
 	NextAccountsDate       string
 }
 
-type Company struct {
-	Name                   string `json:"name"`
-	CompaniesHouseUrl      string `json:"companiesHouseUrl"`
-	Address                string `json:"address"`
-	Size                   string `json:"size"`
-	IncorporationDate      string `json:"incorporationDate"`
-	MortgageCharges        int    `json:"mortgageCharges"`
-	MortgagesOutstanding   int    `json:"mortgagesOutstanding"`
-	MortgagesPartSatisfied int    `json:"mortgagesPartSatisfied"`
-	MortgagesSatisfied     int    `json:"mortgagesSatisfied"`
-	LastAccountsDate       string `json:"lastAccountsDate"`
-	NextAccountsDate       string `json:"nextAccountsDate"`
-}
-
-type PersonWithSignificantControl struct{}
-
 func (d *Postgres) getDatabaseConnection() (*sql.DB, error) {
 	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", d.Host, d.Port, d.User, d.Password, d.Name)
 

@@ -30,6 +30,20 @@ func main() {
 	r.Run()
 }
 
+func createRouter(handler *RouteHandler) *gin.Engine {
+	r := gin.Default()
+
+	serverRecoversFromAnyPanicAndWrites500(r)
+	allowAllOriginsForCORS(r)
+
+	v2 := r.Group("/v2")
+	{
+		v2.POST("/companies/sample", handler.CompanySample)
+	}
+
+	return r
+}
+
 type RouteHandler struct {
 	Database IDatabase
 }

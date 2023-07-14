@@ -6,11 +6,6 @@ import (
 	"strings"
 )
 
-type IDatabase interface {
-	GetListOfCompanies(industry string, isSample bool) ([]Company, error)
-	GetListOfPersonsWithSignificantControl(*[]Company) ([]PersonWithSignificantControl, error)
-}
-
 type Database struct {
 	Host     string
 	Port     string

@@ -42,6 +42,11 @@ type RouteHandler struct {
 	Database IDatabase
 }
 
+type IDatabase interface {
+	GetListOfCompanies(industry string, isSample bool) ([]Company, error)
+	GetListOfPersonsWithSignificantControl(*[]Company) ([]PersonWithSignificantControl, error)
+}
+
 func isRunningLocally() bool {
 	return os.Getenv("GIN_MODE") == ""
 }

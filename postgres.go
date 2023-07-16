@@ -162,7 +162,8 @@ func getCompany(rows *sql.Rows) (Company, error) {
 		*company.Employees = *company.Employees * -1
 	}
 	if company.Employees == nil {
-		*company.Employees = 0
+		val := 0
+		company.Employees = &val
 	}
 
 	company.Equity = getIntValueFromString(row.Equity.String)

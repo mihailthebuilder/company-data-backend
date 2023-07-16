@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 )
@@ -134,52 +135,66 @@ func getCompany(rows *sql.Rows) (Company, error) {
 		return Company{}, err
 	}
 
+	url := fmt.Sprintf("https://find-and-update.company-information.service.gov.uk/company/%s", row.CompanyNumber)
+	address := generateAddress(row.AddressLine1, row.AddressLine2)
+
 	company := Company{
-		Name:               row.CompanyName,
-		CompaniesHouseUrl:  fmt.Sprintf("https://find-and-update.company-information.service.gov.uk/company/%s", row.CompanyNumber),
-		Address:            generateAddress(row.AddressLine1, row.AddressLine2),
-		IncorporationDate:  row.IncorporationDate,
-		MortgageCharges:    row.MortgageCharges,
-		AverageAgeOfOwners: row.AverageAge,
-		LastAccountsDate:   row.EndDate,
+		Name:               &row.CompanyName,
+		CompaniesHouseUrl:  &url,
+		Address:            &address,
+		IncorporationDate:  &row.IncorporationDate,
+		MortgageCharges:    &row.MortgageCharges,
+		AverageAgeOfOwners: &row.AverageAge,
+		LastAccountsDate:   &row.EndDate,
 	}
 
 	if row.PostTown.Valid {
-		company.Town = row.PostTown.String
+		company.Town = &row.PostTown.String
 	}
 
 	if row.PostCode.Valid {
-		company.Postcode = row.PostCode.String
+		company.Postcode = &row.PostCode.String
 	}
 
-	setIntValueIfValid(row.Employees, &company.Employees)
-	setIntValueIfValid(row.Equity, &company.Equity)
-	setIntValueIfValid(row.Cash, &company.Cash)
+	company.Employees = getIntValueFromString(row.Employees.String)
 
-	ncaError := setIntValueIfValid(row.NetCurrentAssets, &company.NetCurrentAssets)
+	if company.Employees != nil && *company.Employees < 0 {
+		*company.Employees = *company.Employees * -1
+	}
+	if company.Employees == nil {
+		*company.Employees = 0
+	}
 
-	faError := setIntValueIfValid(row.FixedAssets, &company.FixedAssets)
+	company.Equity = getIntValueFromString(row.Equity.String)
+	company.NetCurrentAssets = getIntValueFromString(row.NetCurrentAssets.String)
+	company.Cash = getIntValueFromString(row.Cash.String)
+	company.FixedAssets = getIntValueFromString(row.FixedAssets.String)
 
-	if faError != nil {
-		talclError := setIntValueIfValid(row.TotalAssetsLessCurrentLiabilities, &company.FixedAssets)
-		if talclError != nil && ncaError == nil {
-			company.FixedAssets = company.FixedAssets - company.NetCurrentAssets
+	if company.FixedAssets == nil {
+		talcl := getIntValueFromString(row.TotalAssetsLessCurrentLiabilities.String)
+
+		if talcl != nil && company.NetCurrentAssets != nil {
+			val := *talcl - *company.NetCurrentAssets
+			company.FixedAssets = &val
 		}
 	}
 
 	return company, nil
 }
 
-func setIntValueIfValid(value sql.NullString, target *int) error {
-	if value.Valid {
-		intValue, err := strconv.ParseInt(value.String, 10, 64)
-		if err == nil {
-			*target = int(intValue)
-			return nil
-		}
-		return err
+func getIntValueFromString(str string) *int {
+	if str == "" {
+		return nil
 	}
-	return fmt.Errorf("value is not valid")
+
+	val, err := strconv.ParseInt(str, 10, 64)
+	if err != nil {
+		log.Println("error parsing int value from string: ", err)
+		return nil
+	}
+
+	intVal := int(val)
+	return &intVal
 }
 
 func generateAddress(addressEntries ...sql.NullString) string {
